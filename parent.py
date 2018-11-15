@@ -15,3 +15,9 @@ student = Table('student', metadata,
         )
 
 student.create(checkfirst=True)
+
+conn = engine.connect()
+ins = student.insert().values(name='Peter', role='student',password='2018')
+result = conn.execute(ins)
+ins = student.insert().values(name='Mattew', role='student',password='2018')
+result = conn.execute(ins)
