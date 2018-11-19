@@ -31,10 +31,21 @@ def gethtml(url):
 def dict(word):
 	html = gethtml(webster_defintion_url + word)
 	soup = BeautifulSoup(html, "html.parser")
+	
+	#<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
+	part_of_speech_span = soup.find('span',attrs={"class": "fl"}) #dc_sth
+	if part_of_speech_span is None:
+	    part_of_speech = 'NotFound'
+	else:
+	    part_of_speech = part_of_speech_span.text.strip()
+
 	definition_span = soup.find('span',attrs={"class": "dtText"})
-	[s.extract() for s in definition_span('span')]
-	#get rid of the example sentense quoted with span
-	definition = definition_span.text
+	if definition_span is None:
+	    definition = 'NotFound'
+	else:
+	    [s.extract() for s in definition_span('span')]
+	    #get rid of the example sentense quoted with span
+	    definition = definition_span.text.strip()
 	
 	
 	html=gethtml(webster_thesaurus_url + word)
@@ -42,15 +53,22 @@ def dict(word):
 	#class="thes-list syn-list"
 	
 	synonym_span = soup.find('span',attrs={"class": "thes-list syn-list"})
-	synonym_list = synonym_span.find('div',attrs={"class": "thes-list-content"})
-	synonym = synonym_list.text.strip()
+	if synonym_span is None:
+	    synonym = 'NotFound'
+	else:
+	    synonym_list = synonym_span.find('div',attrs={"class": "thes-list-content"})
+	    synonym = synonym_list.text.strip()
 	
 	
 	antonym_span = soup.find('span',attrs={"class": "thes-list ant-list"})
-	antonym_list = antonym_span.find('div',attrs={"class": "thes-list-content"})
-	antonym = antonym_list.text.strip()
+	if antonym_span is None:
+	    antonym = 'NotFound'
+	else:
+	    antonym_list = antonym_span.find('div',attrs={"class": "thes-list-content"})
+	    antonym = antonym_list.text.strip()
 	
-	return(definition,synonym,antonym)
+	print(part_of_speech,definition,synonym,antonym)
+	return(part_of_speech,definition,synonym,antonym)
 	
-word = 'hate'
+word = 'love'
 print(dict(word))
