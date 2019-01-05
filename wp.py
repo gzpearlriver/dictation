@@ -38,28 +38,33 @@ def string_max(string,len_max):
     else:
         return string
 
+
 def dict(word):
     #get definition
     html = gethtml(webster_defintion_url + word)
-    soup = BeautifulSoup(html, "html.parser")
-    
-    #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
-    part_of_speech_span = soup.find('span',attrs={"class": "fl"}) #dc_sth
-    if part_of_speech_span is None:
-        part_of_speech = 'NotFound'
+    if not html is None : 
+
+        soup = BeautifulSoup(html, "html.parser")
+        #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
+        part_of_speech_span = soup.find('span',attrs={"class": "fl"}) #dc_sth
+        if part_of_speech_span is None:
+            part_of_speech = 'NotFound'
+        else:
+            part_of_speech = part_of_speech_span.text.strip()
+            part_of_speech = string_max(part_of_speech, 10)
+            
+        definition_span = soup.find('span',attrs={"class": "dtText"})
+        if definition_span is None:
+            definition = 'NotFound'
+        else:
+            [s.extract() for s in definition_span('span')]
+            #get rid of the example sentense quoted with span
+            definition = definition_span.text.strip()
+            definition = string_max(definition, 200)
     else:
-        part_of_speech = part_of_speech_span.text.strip()
-        part_of_speech = string_max(part_of_speech, 10)
-        
-    definition_span = soup.find('span',attrs={"class": "dtText"})
-    if definition_span is None:
-        definition = 'NotFound'
-    else:
-        [s.extract() for s in definition_span('span')]
-        #get rid of the example sentense quoted with span
-        definition = definition_span.text.strip()
-        definition = string_max(definition, 100)
-    
+        #no definition!
+        print ("%s is not in the dictionary" % word)
+        return ( None, None, None , None)
     
     #get synonym and antonym
     html=gethtml(webster_thesaurus_url + word)
@@ -73,13 +78,13 @@ def dict(word):
         if not synonym_span is None:
             synonym_list = synonym_span.find('div',attrs={"class": "thes-list-content"})
             synonym = synonym_list.text.strip()
-            synonym = string_max(synonym, 30)
+            synonym = string_max(synonym, 100)
         
         antonym_span = soup.find('span',attrs={"class": "thes-list ant-list"})
         if not antonym_span is None:
             antonym_list = antonym_span.find('div',attrs={"class": "thes-list-content"})
             antonym = antonym_list.text.strip()
-            antonym = string_max(antonym, 30)
+            antonym = string_max(antonym, 100)
         
     print(part_of_speech,definition,synonym,antonym)
     return(part_of_speech,definition,synonym,antonym)
@@ -99,11 +104,12 @@ def add_new_word(new_word_list_filename):
             print("insert this word: %s !" % line)
             #for row in conn.execute(s):
             part_of_speech,definition,synonym,antonym = dict(line)
-            ins = vocabulary.insert().values(word = line,part_of_speech=part_of_speech,definition=definition,synonym=synonym,antonym=antonym)
-            print(ins)
-            result = conn.execute(ins)
+            if not definition is None :
+                ins = vocabulary.insert().values(word = line,part_of_speech=part_of_speech,definition=definition,synonym=synonym,antonym=antonym)
+                print(ins)
+                result = conn.execute(ins)
 
-engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.146:3306/mysql", max_overflow=5)
+engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
 
