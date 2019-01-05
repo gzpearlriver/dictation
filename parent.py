@@ -9,7 +9,7 @@ engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql"
 metadata = MetaData(engine)
 conn = engine.connect()
 
-new_word_list_filename = 'peter_word.txt'
+
 
 def create_table():
     '''student = Table('student', metadata,
@@ -43,31 +43,13 @@ def create_table():
 
 def insert_user():
     student = Table('student', metadata, autoload=True, autoload_with=engine)
-    ins = student.insert().values(name='Peter', role='student',password='2018')
+    ins = student.insert().values(name='Peter', role='student',password='2018',total_per_day=12,new_per_day=3)
     result = conn.execute(ins)
-    ins = student.insert().values(name='Mattew', role='student',password='2018')
+    ins = student.insert().values(name='Matthew', role='student',password='2018',total_per_day=12,new_per_day=3)
     result = conn.execute(ins)
 
-''' 
-vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
-    
-f = open(new_word_list_filename,'r')
-for line in f:
-    line = line.strip()
-    s = select([vocabulary]).where(vocabulary.c.word == line)
-    result = conn.execute(s)
-    print(line,result.rowcount)
-    if result.rowcount > 0:
-        print("already in the database")
-    else:
-        print("insert this word", line)
-        #for row in conn.execute(s):
-        ins = vocabulary.insert().values(word = line)
-        result = conn.execute(ins)
-    
-'''
-def insert_word():
-    this_student = 'Peter'
+
+def insert_word(this_student,new_word_list_filename):
     today = date.today()
     wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
 
@@ -75,20 +57,25 @@ def insert_word():
     for line in f:
         line = line.strip()
     
-        s = select([wordlist]).where(and_(wordlist.c.word == line , wordlist.c.student == 'Peter'))
+        s = select([wordlist]).where(and_(wordlist.c.word == line , wordlist.c.student == this_student))
         result = conn.execute(s)
         print(line,result.rowcount)
+        print(result)
     
         if result.rowcount > 0:
             print("already in the database")
         else:
             print("insert this word into wordlist", line)
             #for row in conn.execute(s):
-            ins = wordlist.insert().values(word = line, student = this_student, value =0, correct =0 , wrong =0 , lasttime = today)
+            ins = wordlist.insert().values(word = line, student = this_student, value =0, correct =0 , wrong =0 ,new= False, lasttime = today)
             result = conn.execute(ins)
 
 	
 #create_table()
 
-#insert_user()
-insert_word()
+insert_user()
+'''
+this_student = 'Peter'
+new_word_list_filename = 'peter_word.txt'
+insert_word(this_student,new_word_list_filename)
+'''

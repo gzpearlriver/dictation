@@ -113,5 +113,5 @@ engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql"
 metadata = MetaData(engine)
 conn = engine.connect()
 
-new_word_list_filename = 'peter_word.txt'
+new_word_list_filename = 'matthew_word.txt'
 add_new_word(new_word_list_filename)
