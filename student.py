@@ -4,6 +4,8 @@
 import pymysql
 from sqlalchemy import *
 
+from datetime import date
+
 #for command cls
 import os
 
@@ -12,6 +14,8 @@ import pyttsx3
 
 
 def dictate(student,today_totol,today_new):
+    today = date.today()
+    
     #get the number of new wornds
     wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
     stmt = text("SELECT count(*) as word_count FROM wordlist WHERE student = :x and new = True")
@@ -39,7 +43,7 @@ def dictate(student,today_totol,today_new):
     
 
     if today_new > 0 :
-        announcment = "Let's begin to try the new words."
+        announcment = "\nLet's begin to try the new words."
         print('\n',announcment)
         voice_engine.say(announcment)
         voice_engine.runAndWait()
@@ -54,8 +58,9 @@ def dictate(student,today_totol,today_new):
             wrong = row[wordlist.c.wrong]
             correct = row[wordlist.c.correct]
             value = row[wordlist.c.value]
+            practice = row[wordlist.c.practice]
             
-            dict_correct = dictate(word)  
+            dict_correct = dictate_oneword(word) 
             
             if dict_correct:
                 #本次正确
@@ -82,13 +87,13 @@ def dictate(student,today_totol,today_new):
                 #降低value值，至少减5
                 
             #print (value,correct,wrong)    
-            s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(value=value,wrong=wrong,correct=correct)
+            s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,value=value,wrong=wrong,correct=correct,practice=practice+1)
             #print(s)
             result = conn.execute(s)
         
 
     if today_old > 0 :
-        announcment = "Let's pratice to spell words we have already learned."
+        announcment = "\nLet's pratice to spell words we have already learned."
         print('\n',announcment)
         voice_engine.say(announcment)
         voice_engine.runAndWait()
@@ -103,7 +108,8 @@ def dictate(student,today_totol,today_new):
             wrong = row[wordlist.c.wrong]
             correct = row[wordlist.c.correct]
             value = row[wordlist.c.value]
-            
+            practice = row[wordlist.c.practice]
+           
             dict_correct = dictate_oneword(word)  
             
             if dict_correct:
@@ -130,31 +136,33 @@ def dictate(student,today_totol,today_new):
                 value -= 5*wrong
                 #降低value值，至少减5
                 
-            #print (value,correct,wrong)    
-            s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(value=value,wrong=wrong,correct=correct)
+            #print (value,correct,wrong)
+            s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,value=value,wrong=wrong,correct=correct,practice=practice+1)
             #print(s)
-			
-			#summary the progress in recent days
-			'''wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
-			stmt = text("SELECT count(*) as word_count FROM wordlist WHERE student = :x and new = True")
-			stmt = stmt.bindparams(x=student)
-			#print(str(stmt))
-			result = conn.execute(stmt).fetchone()
-			pending_new = result['word_count']
-    
-			announcment = "There are %i new words on the list to learn." % pending_new
-			print('\n',announcment)
-			voice_engine.say(announcment)
-			voice_engine.runAndWait()'''
-	
             result = conn.execute(s)
+			
+    #summary the progress in recent days
+    announcment = "Today you have practiced %i new words and %i old words." % (today_new,today_old)
+    print('\n',announcment)
+    voice_engine.say(announcment)
+    voice_engine.runAndWait()
+
+    stmt = text("SELECT count(*) as master_word FROM wordlist WHERE student = :x and value>0")
+    stmt = stmt.bindparams(x=student)
+    result = conn.execute(stmt).fetchone()
+    master_word = result['master_word']
+    announcment = "And your have already mastered %i words since the beginning." % master_word
+    print('\n',announcment)
+    voice_engine.say(announcment)
+    voice_engine.runAndWait()
+
 
             
 def dictate_oneword(word):
     #print('working on word: %s' % word)
     #os.system("cls") # windows
 
-    voice_engine.say('Now listen carefully and spell the word.')
+    voice_engine.say('\n\nNow listen carefully and spell the word.')
     voice_engine.runAndWait()
 
     stmt = text("SELECT * FROM vocabulary WHERE word = :x ")

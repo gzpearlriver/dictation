@@ -148,6 +148,7 @@ conn = engine.connect()
 
 #new_word_list_filename = 'simplemath.txt'
 #new_word_list_filename = 'peter_word.txt'
-new_word_list_filename = 'matthew_word.txt'
+#new_word_list_filename = 'matthew_word.txt'
+new_word_list_filename = 'matthew_0118.txt'
 
 add_new_word(new_word_list_filename)

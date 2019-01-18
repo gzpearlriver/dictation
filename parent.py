@@ -53,8 +53,17 @@ def update_user(user,passwd,total,new):
     result = conn.execute(stmt)
 
 
-def insert_word(this_student,new_word_list_filename):
+def insert_word(this_student,new_word_list_filename,new_or_old):
     today = date.today()
+    if new_or_old == 'new' or new_or_old =='New' :
+        itisnew=True
+    elif new_or_old == 'old' or new_or_old =='OLD':
+        itisnew=False
+    else:
+        print('\nPlease make clear whether they are new or old word for the sutdent.')
+        return
+
+        
     wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
 
     f = open(new_word_list_filename,'r')
@@ -71,7 +80,7 @@ def insert_word(this_student,new_word_list_filename):
         else:
             print("insert this word into wordlist", line)
             #for row in conn.execute(s):
-            ins = wordlist.insert().values(word = line, student = this_student, value =0, correct =0 , wrong =0 ,new= False, lasttime = today)
+            ins = wordlist.insert().values(word = line, student = this_student, practice=0, value =0, correct =0 , wrong =0 ,new= itisnew, lasttime = today)
             result = conn.execute(ins)
 
 	
@@ -85,12 +94,11 @@ new = 5
 #update_user(user,passwd,total,new)
 #insert_user(user,passwd,total,new)
 
-
+new_word_list_filename = 'matthew_0118.txt'
 this_student = 'Francis'
-new_word_list_filename = 'peter_word.txt'
-insert_word(this_student,new_word_list_filename)
-new_word_list_filename = 'simplemath.txt'
-insert_word(this_student,new_word_list_filename)
-new_word_list_filename = 'matthew_word.txt'
-insert_word(this_student,new_word_list_filename)
+insert_word(this_student,new_word_list_filename,new_or_old='new')
+this_student = 'Peter'
+insert_word(this_student,new_word_list_filename,new_or_old='new')
+this_student = 'Matthew'
+insert_word(this_student,new_word_list_filename,new_or_old='new')
 
