@@ -11,7 +11,7 @@ import os
 import pyttsx3
 
 
-def get_words(student,today_totol,today_new):
+def dictate(student,today_totol,today_new):
     #get the number of new wornds
     wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
     stmt = text("SELECT count(*) as word_count FROM wordlist WHERE student = :x and new = True")
@@ -26,13 +26,13 @@ def get_words(student,today_totol,today_new):
     voice_engine.runAndWait()
     
     today_new = min(today_new, pending_new)
-    announcment = "Today you are going to pratice %i new words." % today_new
+    announcment = "Today you are going to practice %i new words." % today_new
     print('\n',announcment)
     voice_engine.say(announcment)
     voice_engine.runAndWait()
  
     today_old = today_totol - today_new
-    announcment = "Today you are going to pratice %i old words.\n " % today_old
+    announcment = "Today you are going to practice %i old words. " % today_old
     print('\n',announcment)
     voice_engine.say(announcment)
     voice_engine.runAndWait()
@@ -104,7 +104,7 @@ def get_words(student,today_totol,today_new):
             correct = row[wordlist.c.correct]
             value = row[wordlist.c.value]
             
-            dict_correct = dictate(word)  
+            dict_correct = dictate_oneword(word)  
             
             if dict_correct:
                 #本次正确
@@ -133,10 +133,24 @@ def get_words(student,today_totol,today_new):
             #print (value,correct,wrong)    
             s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(value=value,wrong=wrong,correct=correct)
             #print(s)
+			
+			#summary the progress in recent days
+			'''wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
+			stmt = text("SELECT count(*) as word_count FROM wordlist WHERE student = :x and new = True")
+			stmt = stmt.bindparams(x=student)
+			#print(str(stmt))
+			result = conn.execute(stmt).fetchone()
+			pending_new = result['word_count']
+    
+			announcment = "There are %i new words on the list to learn." % pending_new
+			print('\n',announcment)
+			voice_engine.say(announcment)
+			voice_engine.runAndWait()'''
+	
             result = conn.execute(s)
 
             
-def dictate(word):
+def dictate_oneword(word):
     #print('working on word: %s' % word)
     #os.system("cls") # windows
 
@@ -222,7 +236,7 @@ else:
     print('\n',announcment)
     voice_engine.say(announcment)
     voice_engine.runAndWait()
-    get_words(this_student,today_totol,today_new)
+    dictate(this_student,today_totol,today_new)
     
 #create_table()
 #insert_user()

@@ -7,13 +7,13 @@ sys.setdefaultencoding('utf-8')'''
 
 from urllib import request
 import re
-#import numpy as np
-#import pandas as pd
+
 from bs4 import BeautifulSoup
 import pymysql
 from sqlalchemy import *
 
-webster_defintion_url = r'https://www.merriam-webster.com/dictionary/'
+webster_defintion_url = r'http://www.learnersdictionary.com/definition/'
+webster_defintion_backup = r'https://www.merriam-webster.com/dictionary/'
 webster_thesaurus_url = r'https://www.merriam-webster.com/thesaurus/'
 
 bing_url=r'https://cn.bing.com/search?q=definition+'
@@ -42,8 +42,10 @@ def string_max(string,len_max):
 def dict(word):
     #get definition
     html = gethtml(webster_defintion_url + word)
-    if not html is None : 
 
+    if not html is None : 
+    #find definition in http://www.learnersdictionary.com
+    
         soup = BeautifulSoup(html, "html.parser")
         #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
         part_of_speech_span = soup.find('span',attrs={"class": "fl"}) #dc_sth
@@ -53,18 +55,42 @@ def dict(word):
             part_of_speech = part_of_speech_span.text.strip()
             part_of_speech = string_max(part_of_speech, 10)
             
-        definition_span = soup.find('span',attrs={"class": "dtText"})
+        definition_span = soup.find('span',attrs={"class": "def_text"})
         if definition_span is None:
             definition = 'NotFound'
         else:
-            [s.extract() for s in definition_span('span')]
+            #[s.extract() for s in definition_span('span')]
             #get rid of the example sentense quoted with span
+            
             definition = definition_span.text.strip()
             definition = string_max(definition, 200)
+    
     else:
+        html = gethtml(webster_defintion_backup + word)
+        if not html is None : 
+            #find definition in http://www.learnersdictionary.com
+            soup = BeautifulSoup(html, "html.parser")
+            #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
+            part_of_speech_span = soup.find('span',attrs={"class": "fl"}) #dc_sth
+            if part_of_speech_span is None:
+                part_of_speech = 'NotFound'
+            else:
+                part_of_speech = part_of_speech_span.text.strip()
+                part_of_speech = string_max(part_of_speech, 10)
+                
+            definition_span = soup.find('span',attrs={"class": "dtText"})
+            if definition_span is None:
+                definition = 'NotFound'
+            else:
+                [s.extract() for s in definition_span('span')]
+                #get rid of the example sentense quoted with span
+                definition = definition_span.text.strip()
+                definition = string_max(definition, 200)
+                
+        else:        
         #no definition!
-        print ("%s is not in the dictionary" % word)
-        return ( None, None, None , None)
+            print ("%s is not in the dictionary" % word)
+            return ( None, None, None , None)
     
     #get synonym and antonym
     html=gethtml(webster_thesaurus_url + word)
@@ -86,14 +112,21 @@ def dict(word):
             antonym = antonym_list.text.strip()
             antonym = string_max(antonym, 100)
         
-    print(part_of_speech,definition,synonym,antonym)
+    print(part_of_speech)
+    print(definition)
+    print(synonym)
+    print(antonym)
     return(part_of_speech,definition,synonym,antonym)
 
+
+    
+    
 def add_new_word(new_word_list_filename):
     vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
 
     f = open(new_word_list_filename,'r')
     for line in f:
+        print("\n\n")
         line = line.strip()
         s = select([vocabulary]).where(vocabulary.c.word == line)
         result = conn.execute(s)
@@ -113,5 +146,8 @@ engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql"
 metadata = MetaData(engine)
 conn = engine.connect()
 
+#new_word_list_filename = 'simplemath.txt'
+#new_word_list_filename = 'peter_word.txt'
 new_word_list_filename = 'matthew_word.txt'
+
 add_new_word(new_word_list_filename)

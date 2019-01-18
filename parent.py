@@ -41,12 +41,16 @@ def create_table():
     vocabulary.create(checkfirst=True)
     
 
-def insert_user():
+def insert_user(user,passwd,total,new):
     student = Table('student', metadata, autoload=True, autoload_with=engine)
-    ins = student.insert().values(name='Peter', role='student',password='2018',total_per_day=12,new_per_day=3)
+    ins = student.insert().values(name=user, role='student',password=passwd,total_per_day=total,new_per_day=new)
     result = conn.execute(ins)
-    ins = student.insert().values(name='Matthew', role='student',password='2018',total_per_day=12,new_per_day=3)
-    result = conn.execute(ins)
+
+def update_user(user,passwd,total,new):
+    student = Table('student', metadata, autoload=True, autoload_with=engine)
+    stmt = student.update().where(student.c.name == user).values(password=passwd,total_per_day=total,new_per_day=new)
+    #print(s)
+    result = conn.execute(stmt)
 
 
 def insert_word(this_student,new_word_list_filename):
@@ -73,9 +77,20 @@ def insert_word(this_student,new_word_list_filename):
 	
 #create_table()
 
-insert_user()
-'''
-this_student = 'Peter'
+
+user = 'Francis'
+passwd = '2018'
+total = 12
+new = 5
+#update_user(user,passwd,total,new)
+#insert_user(user,passwd,total,new)
+
+
+this_student = 'Francis'
 new_word_list_filename = 'peter_word.txt'
 insert_word(this_student,new_word_list_filename)
-'''
+new_word_list_filename = 'simplemath.txt'
+insert_word(this_student,new_word_list_filename)
+new_word_list_filename = 'matthew_word.txt'
+insert_word(this_student,new_word_list_filename)
+
