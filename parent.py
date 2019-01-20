@@ -87,13 +87,14 @@ def insert_word(this_student,new_word_list_filename,new_or_old):
 #create_table()
 
 
-user = 'Francis'
+user = 'Matthew'
 passwd = '2018'
-total = 12
+total = 10
 new = 5
-#update_user(user,passwd,total,new)
+update_user(user,passwd,total,new)
 #insert_user(user,passwd,total,new)
 
+'''
 new_word_list_filename = 'matthew_0118.txt'
 this_student = 'Francis'
 insert_word(this_student,new_word_list_filename,new_or_old='new')
@@ -101,4 +102,4 @@ this_student = 'Peter'
 insert_word(this_student,new_word_list_filename,new_or_old='new')
 this_student = 'Matthew'
 insert_word(this_student,new_word_list_filename,new_or_old='new')
-
+'''

@@ -87,7 +87,7 @@ def dictate(student,today_totol,today_new):
                 #降低value值，至少减5
                 
             #print (value,correct,wrong)    
-            s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,value=value,wrong=wrong,correct=correct,practice=practice+1)
+            s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,value=value,wrong=wrong,correct=correct,practice=practice+1,new=False)
             #print(s)
             result = conn.execute(s)
         
