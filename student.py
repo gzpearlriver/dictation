@@ -215,14 +215,28 @@ def get_student(student):
     result = conn.execute(stmt)
     if result.rowcount > 0:
         row =result.fetchone()
+        role = row['role']
         total_today= row['total_per_day']
         new_today= row['new_per_day']
         passwd = row['password']   
-        return passwd,total_today,new_today
+        return role,passwd,total_today,new_today
     else:
-        return None,None,None
+        return None,None,None,None
 
-        
+def get_relation(parent):
+    mystudents =[]
+    myrelation = Table('relationship', metadata, autoload=True, autoload_with=engine)
+    stmt = text("SELECT * FROM relationship WHERE parent = :x ")
+    stmt = stmt.bindparams(x=parent)
+    #print(str(stmt))
+    result = conn.execute(stmt)
+    if result.rowcount > 0:
+        for row in result:
+            mystudents.append(row['student'])
+        return mystudents
+    else:
+        return None
+		
 engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
@@ -232,7 +246,7 @@ voice_engine.say("Please enter your name.")
 voice_engine.runAndWait()
 this_student = input('Your name is :')
 
-passwd,today_totol,today_new = get_student(this_student)
+role,passwd,today_totol,today_new = get_student(this_student)
 
 if today_totol == None:
     announcment = "Sorry, student %s is not found in the database! " % this_student
@@ -244,8 +258,12 @@ else:
     print('\n',announcment)
     voice_engine.say(announcment)
     voice_engine.runAndWait()
-    dictate(this_student,today_totol,today_new)
-    
+    if role == 'student':
+        dictate(this_student,today_totol,today_new)
+    elif role == 'parent':
+        mystudents = get_relation(this_student)
+        print(mystudents)
+
 #create_table()
 #insert_user()
 
