@@ -3,8 +3,7 @@
 
 import pymysql
 from sqlalchemy import *
-
-from datetime import date
+from datetime import date,timedelta
 
 #for command cls
 import os
@@ -236,7 +235,30 @@ def get_relation(parent):
         return mystudents
     else:
         return None
-		
+
+def print_wordstat(student,dayago):
+    print("\n%s has practised these words this week: \n" %student)
+    wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
+    
+    for theday in range (dayago + 1):
+        day1 = date.today() - timedelta(days=theday+1)
+        day2 = date.today() - timedelta(days=theday)
+        print("===== %s ======" %day1)
+        stmt = text("SELECT * FROM wordlist WHERE student = :x and lasttime >= :y and lasttime < :z")
+        stmt = stmt.bindparams(x=student,y=day1,z=day2)
+        #print(str(stmt))
+        result = conn.execute(stmt)
+        if result.rowcount > 0:
+            print("%-30s%-10s%-10s%-10s" %("word","practiced","correct","wrong"))
+            for row in result:
+                print("%-30s%-10s%-10s%-10s" %(row['word'],row['practice'],row['correct'],row['wrong']))
+
+        print("No word is practiced!\n")
+    
+    print("That's all.\n")
+    print("="*60 +"\n")
+
+    
 engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
@@ -262,8 +284,9 @@ else:
         dictate(this_student,today_totol,today_new)
     elif role == 'parent':
         mystudents = get_relation(this_student)
-        print(mystudents)
-
+        for onestudent in mystudents:
+            print_wordstat(onestudent,5)
+        
 #create_table()
 #insert_user()
 
