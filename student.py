@@ -237,13 +237,13 @@ def get_relation(parent):
         return None
 
 def print_wordstat(student,dayago):
-    print("\n%s has practised these words this week: \n\n" %student)
+    print("\n%s has practised these words this week: \n" %student)
     wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
     
     for theday in range (dayago + 1):
         day1 = date.today() - timedelta(days=theday+1)
         day2 = date.today() - timedelta(days=theday)
-        print("===== %s ======" %day1)
+        print("\n===== %s ======" %day1)
         stmt = text("SELECT * FROM wordlist WHERE student = :x and lasttime > :y and lasttime <= :z")
         stmt = stmt.bindparams(x=student,y=day1,z=day2)
         #print(str(stmt))
@@ -252,13 +252,13 @@ def print_wordstat(student,dayago):
             print("%-30s%-10s%-10s%-10s" %("word","practiced","correct","wrong"))
             for row in result:
                 print("%-30s%-10s%-10s%-10s" %(row['word'],row['practice'],row['correct'],row['wrong']))
-
         else:
             print("No word is practiced!\n")
-        print("\n")
+    
+        #print("\n")
         
-    print("That's all.\n")
-    print("="*60 +"\n")
+    print("That's all.")
+    print("="*60)
 
     
 engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
@@ -287,7 +287,7 @@ else:
     elif role == 'parent':
         mystudents = get_relation(this_student)
         for onestudent in mystudents:
-            print_wordstat(onestudent,5)
+            print_wordstat(onestudent,8)
         
 #create_table()
 #insert_user()
