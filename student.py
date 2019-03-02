@@ -237,14 +237,14 @@ def get_relation(parent):
         return None
 
 def print_wordstat(student,dayago):
-    print("\n%s has practised these words this week: \n" %student)
+    print("\n%s has practised these words this week: \n\n" %student)
     wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
     
     for theday in range (dayago + 1):
         day1 = date.today() - timedelta(days=theday+1)
         day2 = date.today() - timedelta(days=theday)
         print("===== %s ======" %day1)
-        stmt = text("SELECT * FROM wordlist WHERE student = :x and lasttime >= :y and lasttime < :z")
+        stmt = text("SELECT * FROM wordlist WHERE student = :x and lasttime > :y and lasttime <= :z")
         stmt = stmt.bindparams(x=student,y=day1,z=day2)
         #print(str(stmt))
         result = conn.execute(stmt)
@@ -253,8 +253,10 @@ def print_wordstat(student,dayago):
             for row in result:
                 print("%-30s%-10s%-10s%-10s" %(row['word'],row['practice'],row['correct'],row['wrong']))
 
-        print("No word is practiced!\n")
-    
+        else:
+            print("No word is practiced!\n")
+        print("\n")
+        
     print("That's all.\n")
     print("="*60 +"\n")
 
