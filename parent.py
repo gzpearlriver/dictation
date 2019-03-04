@@ -94,7 +94,7 @@ def insert_word(this_student,new_word_list_filename,new_or_old):
         else:
             print("insert this word into wordlist", line)
             #for row in conn.execute(s):
-            ins = wordlist.insert().values(word = line, student = this_student, practice=0, value =0, correct =0 , wrong =0 ,new= itisnew, lasttime = today)
+            ins=wordlist.insert().values(word=line, student=this_student, practice=0, value=0, correct=0 , wrong=0 ,new=itisnew, lasttime=today)
             result = conn.execute(ins)
 
 	
@@ -137,14 +137,14 @@ def dict(word):
         #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
         part_of_speech_span = soup.find('span',attrs={"class": "fl"}) #dc_sth
         if part_of_speech_span is None:
-            part_of_speech = 'NotFound'
+            part_of_speech = None
         else:
             part_of_speech = part_of_speech_span.text.strip()
             part_of_speech = string_max(part_of_speech, 10)
             
         definition_span = soup.find('span',attrs={"class": "def_text"})
         if definition_span is None:
-            definition = 'NotFound'
+            definition = None
         else:
             #[s.extract() for s in definition_span('span')]
             #get rid of the example sentense quoted with span
@@ -224,48 +224,103 @@ def add_new_word(new_word_list_filename):
             print("insert this word: %s !" % line)
             #for row in conn.execute(s):
             part_of_speech,definition,synonym,antonym = dict(line)
-            if not definition is None :
+            if (not definition is None) and (not part_of_speech is None):
                 ins = vocabulary.insert().values(word = line,part_of_speech=part_of_speech,definition=definition,synonym=synonym,antonym=antonym)
                 print(ins)
                 result = conn.execute(ins)
-                
-                
+            else:
+                print("Sorry. I can not find the definiton for  %s! I have to skip it....." % line)
+			
+def check_word(thisword):
+    vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
+    s = select([vocabulary]).where(vocabulary.c.word == thisword)
+    result = conn.execute(s)
+    if result.rowcount <= 0:
+        print("%s is not in the talbe vocabulary now." % thisword)
+    else:
+        for row in result:
+            print("\npart of speech  ")
+            print(row['part_of_speech'])
+            print("\ndefinition ") 
+            print(row['definition'])
+            print("\nsynonym ")
+            print(row['synonym'])
+            print("\nantonym") 
+            print(row['antonym'])
+    
+    wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
+    s = select([wordlist]).where(wordlist.c.word == thisword)
+    result = conn.execute(s)
+    if result.rowcount <= 0:
+        print("%s is not in the talbe wordlist now." % thisword)
+    else:
+        for row in result:
+            print(row)
 
+			
+def delete_word(thisword):
+    vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
+    stmt=vocabulary.delete().where(vocabulary.c.word == thisword)
+    print(stmt)
+    conn.execute(stmt)
+    wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
+    stmt=wordlist.delete().where(wordlist.c.word == thisword)
+    print(stmt)
+    conn.execute(stmt)
+	
 engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
 
-print("Welcom! This the program for parent. \n\n")
-print("1) add new wordlist.")
-print("2) add new student.")
-choiced = input("Please enter your choice:")
-
-if int(choiced) == 1:
-    print("\n\nLet's extend vocabulary!\n")
-    new_word_list_filename = input("Please enter worldlist filename:")
-    print("\nWe are add new words from %s. \n" % new_word_list_filename)
-    add_new_word(new_word_list_filename)
-    student = input("Please enter the student name(all means every student):")
+while True:
+    print("\nWelcom! This the program for parent. \n\n")
+    print("0) quit.")
+    print("1) add new wordlist.")
+    print("2) delete word.")
+    print("3) check word definition.")
+    print("4) add new student.")
+    choiced = int(input("Please enter your choice:"))
     
-    if student == 'all':
-        this_student = 'Francis'
-        insert_word(this_student,new_word_list_filename,new_or_old='new')
-        this_student = 'Peter'
-        insert_word(this_student,new_word_list_filename,new_or_old='new')
-        this_student = 'Matthew'
-        insert_word(this_student,new_word_list_filename,new_or_old='new')
-    else:
-        insert_word(student,new_word_list_filename,new_or_old='new')
+    if choiced == 0:
+        print("see you .....")
+        break
+    
+    elif choiced == 1:
+        print("\n\nLet's extend vocabulary!\n")
+        new_word_list_filename = input("Please enter worldlist filename:")
+        print("\nWe are add new words from %s. \n" % new_word_list_filename)
+        add_new_word(new_word_list_filename)
+        student = input("Please enter the student name(all means every student):")
         
-'''
-add student or update user
-user = 'Matthew'
-passwd = '2018'
-total = 10
-new = 5
+        if student == 'all':
+            this_student = 'Francis'
+            insert_word(this_student,new_word_list_filename,new_or_old='new')
+            this_student = 'Peter'
+            insert_word(this_student,new_word_list_filename,new_or_old='new')
+            this_student = 'Matthew'
+            insert_word(this_student,new_word_list_filename,new_or_old='new')
+        else:
+            insert_word(student,new_word_list_filename,new_or_old='new')
+    
+    elif choiced == 2:
+        thisword = input("Please enter the word to check: ")
+        delete_word(thisword)    
+    
+    elif choiced == 3:
+        thisword = input("Please enter the word to check: ")
+        check_word(thisword)    
+        part_of_speech,definition,synonym,antonym = dict(thisword)
+        print("="*60)
+        print(part_of_speech,definition,synonym,antonym)
+    
+    elif choiced == 4:
+        student = input("Please enter the student name: ")
+        password = input("Please enter the password: ")
+        total = input("Please enter how many words to practice: (recommend 10) ")
+        new = input("Please enter how many new words to learn: (recommed 5)")
+        insert_user(user,passwd,total,new)
+	
 #update_user(user,passwd,total,new)
-#insert_user(user,passwd,total,new)
-'''
 
 
 '''

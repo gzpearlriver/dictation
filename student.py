@@ -249,9 +249,9 @@ def print_wordstat(student,dayago):
         #print(str(stmt))
         result = conn.execute(stmt)
         if result.rowcount > 0:
-            print("%-30s%-10s%-10s%-10s" %("word","practiced","correct","wrong"))
+            print("%-30s%-10s%-10s%-10s%-10s" %("word","practiced","correct","wrong","value"))
             for row in result:
-                print("%-30s%-10s%-10s%-10s" %(row['word'],row['practice'],row['correct'],row['wrong']))
+                print("%-30s%-10s%-10s%-10s%-10s" %(row['word'],row['practice'],row['correct'],row['wrong'],row['value']))
         else:
             print("No word is practiced!\n")
     
