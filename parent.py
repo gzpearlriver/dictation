@@ -236,20 +236,18 @@ metadata = MetaData(engine)
 conn = engine.connect()
 
 print("Welcom! This the program for parent. \n\n")
-print("1) add new wordlist.\n")
-print("2) add new student.\n")
+print("1) add new wordlist.")
+print("2) add new student.")
 choiced = input("Please enter your choice:")
 
-if choiced == 1:
+if int(choiced) == 1:
     print("\n\nLet's extend vocabulary!\n")
-	new_word_list_filename = input("Please enter worldlist filename:")
+    new_word_list_filename = input("Please enter worldlist filename:")
     print("\nWe are add new words from %s. \n" % new_word_list_filename)
-
     add_new_word(new_word_list_filename)
-
-	student = input("Please enter the student name(all means every student):")
- 
-	if student == 'all':
+    student = input("Please enter the student name(all means every student):")
+    
+    if student == 'all':
         this_student = 'Francis'
         insert_word(this_student,new_word_list_filename,new_or_old='new')
         this_student = 'Peter'
@@ -257,10 +255,8 @@ if choiced == 1:
         this_student = 'Matthew'
         insert_word(this_student,new_word_list_filename,new_or_old='new')
     else:
-	    insert_word(student,new_word_list_filename,new_or_old='new')
-
-
-		
+        insert_word(student,new_word_list_filename,new_or_old='new')
+        
 '''
 add student or update user
 user = 'Matthew'
@@ -285,4 +281,3 @@ studentlist = ['Francis','Peter','Matthew']
 parentlist = ['Jackie','Frank']
 add_relation(parentlist,studentlist)
 '''
-
