@@ -11,7 +11,33 @@ import os
 # fot text to voice
 import pyttsx3
 
+from urllib import request
 
+import pygame  # pip install pygame
+
+def playMusic(filename, loops=0, start=0.0, value=0.5):
+    """
+    :param filename: 文件名
+    :param loops: 循环次数
+    :param start: 从多少秒开始播放
+    :param value: 设置播放的音量，音量value的范围为0.0到1.0
+    :return:
+    """
+    flag = False  # 是否播放过
+    pygame.mixer.init()  # 音乐模块初始化
+    while 1:
+        if flag == 0:
+            pygame.mixer.music.load(filename)
+            # pygame.mixer.music.play(loops=0, start=0.0) loops和start分别代表重复的次数和开始播放的位置。
+            pygame.mixer.music.play(loops=loops, start=start)
+            pygame.mixer.music.set_volume(value)  # 来设置播放的音量，音量value的范围为0.0到1.0。
+        if pygame.mixer.music.get_busy() == True:
+            flag = True
+        else:
+            if flag:
+                pygame.mixer.music.stop()  # 停止播放
+                break
+                
 def dictate(student,today_totol,today_new):
     today = date.today()
     
@@ -175,14 +201,24 @@ def dictate_oneword(word):
     
     #play announcment
 
-    voice_engine.say(word)
-    voice_engine.runAndWait()
+    path ='voice/%s.mp3' % word
+    if os.path.exists(path) and os.path.isfile(path) :
+        playMusic(path)
+        
+        voice_engine.say("Repeat. The word is:")
+        voice_engine.runAndWait()
+        
+        playMusic(path)
+    
+    else:
+        voice_engine.say(word)
+        voice_engine.runAndWait()
 
-    voice_engine.say("Repeat. The word is:")
-    voice_engine.runAndWait()
+        voice_engine.say("Repeat. The word is:")
+        voice_engine.runAndWait()
 
-    voice_engine.say(word)
-    voice_engine.runAndWait()
+        voice_engine.say(word)
+        voice_engine.runAndWait()
     
     print("The word you are going to spell is a %s .\n" % part_of_speech)
     print("Its definition is '%s' .\n" %  definition)
@@ -260,17 +296,61 @@ def print_wordstat(student,dayago):
     print("That's all.")
     print("="*60)
 
+def get_voice(word,path):
+    print("Getting voice of %s from internet.... " % word)
+    mp3url = 'https://fanyi.baidu.com/gettts?lan=en&text=%s&spd=3&source=web' % word
+    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
     
+    try:
+        req = request.Request(mp3url, headers=headers)
+        response = request.urlopen(req).read()
+        with open(path,'wb') as f:
+            f.write(response)
+            f.close()
+    except:
+        print("downloa error or write error ....")
+
+def check_voice():
+    path = 'voice'
+    if not os.path.exists(path) or not os.path.isdir(path):
+        os.mkdir('voice')
+    if os.access(path, os.W_OK):
+        return len([lists for lists in os.listdir(path) if os.path.isfile(os.path.join(path, lists))])
+    else:
+        return None
+
+def update_vocie(local_voice_num):
+    #get the number of words in vocabulary
+	
+    vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
+    stmt = text("SELECT count(*) as word_count FROM vocabulary")
+    result = conn.execute(stmt).fetchone()
+    total = result['word_count']
+    if total > local_voice_num:
+        vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
+        stmt = text("SELECT * FROM vocabulary")
+        result = conn.execute(stmt)
+        if result.rowcount > 0:
+            for row in result:
+                thisword = row['word']
+                path ='voice/%s.mp3' % thisword
+                if not os.path.exists(path) :
+                    get_voice(thisword,path)
+	
 engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
 voice_engine = pyttsx3.init()
+
+local_voice_num = check_voice()
+print('Info : number of local voices is %d. \n' % local_voice_num)
 
 voice_engine.say("Please enter your name.")
 voice_engine.runAndWait()
 this_student = input('Your name is :')
 
 role,passwd,today_totol,today_new = get_student(this_student)
+
 
 if today_totol == None:
     announcment = "Sorry, student %s is not found in the database! " % this_student
@@ -288,7 +368,9 @@ else:
         mystudents = get_relation(this_student)
         for onestudent in mystudents:
             print_wordstat(onestudent,8)
-        
+            
+update_vocie(local_voice_num)
+			
 #create_table()
 #insert_user()
 
