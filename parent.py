@@ -67,7 +67,7 @@ def update_user(user,passwd,total,new):
     result = conn.execute(stmt)
 
 
-def insert_word(this_student,new_word_list_filename,new_or_old):
+def insert_word(this_student,new_word_list_filename,new_or_old,value=0):
     today = date.today()
     if new_or_old == 'new' or new_or_old =='New' :
         itisnew=True
@@ -84,18 +84,26 @@ def insert_word(this_student,new_word_list_filename,new_or_old):
     for line in f:
         line = line.strip()
     
-        s = select([wordlist]).where(and_(wordlist.c.word == line , wordlist.c.student == this_student))
+        vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
+        s = select([vocabulary]).where(vocabulary.c.word == line)
         result = conn.execute(s)
-        print(line,result.rowcount)
-        print(result)
-    
-        if result.rowcount > 0:
-            print("already in the database")
+
+        if result.rowcount <= 0:
+            print("%s not in the vocabulary yet...." % line)
         else:
-            print("insert this word into wordlist", line)
-            #for row in conn.execute(s):
-            ins=wordlist.insert().values(word=line, student=this_student, practice=0, value=0, correct=0 , wrong=0 ,new=itisnew, lasttime=today)
-            result = conn.execute(ins)
+            #already in vocabulary
+            s = select([wordlist]).where(and_(wordlist.c.word == line , wordlist.c.student == this_student))
+            result = conn.execute(s)
+            #print(line,result.rowcount)
+            #print(result)
+        
+            if result.rowcount > 0:
+                print("already in the database")
+            else:
+                print("insert this word into wordlist", line)
+                #for row in conn.execute(s):
+                ins=wordlist.insert().values(word=line, student=this_student, practice=0, value=value, correct=0 , wrong=0 ,new=itisnew, lasttime=today)
+                result = conn.execute(ins)
 
 	
 #create_table()
@@ -104,8 +112,10 @@ def gethtml(url):
     print("downloading  ", url)    
     #page =u rllib2.urlopen(url)  #python 2.7
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
+    #proxies = { "http": "proxy.gmcc.net:8081", "https": "proxy.gmcc.net:8081", } 
     try:
-        req = request.Request(url, headers=headers)
+        req = request.Request(url,headers=headers)
+        #req = request.Request(url,headers=headers,proxies=proxies)
         page = request.urlopen(req).read()
         page = page.decode('utf-8')
     except:
@@ -124,66 +134,84 @@ def dict(word):
     webster_defintion_url = r'http://www.learnersdictionary.com/definition/'
     webster_defintion_backup = r'https://www.merriam-webster.com/dictionary/'
     webster_thesaurus_url = r'https://www.merriam-webster.com/thesaurus/'
-
-    bing_url=r'https://cn.bing.com/search?q=definition+'
-
+    wordsmyth_url = 'https://kids.wordsmyth.net/we/?ent='
+    bing_url = r'https://cn.bing.com/search?q=definition+'
+    wordsmyth = r'https://kids.wordsmyth.net/we/?ent='
+    
+    #default value is None
+    definition = None
+    part_of_speech = None
+    synonym = None
+    antonym = None
+    
     #get definition
     html = gethtml(webster_defintion_url + word)
-
-    if not html is None : 
     #find definition in http://www.learnersdictionary.com
     
+    if not html is None : 
         soup = BeautifulSoup(html, "html.parser")
         #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
         part_of_speech_span = soup.find('span',attrs={"class": "fl"}) #dc_sth
-        if part_of_speech_span is None:
-            part_of_speech = None
-        else:
+        if not part_of_speech_span is None:
             part_of_speech = part_of_speech_span.text.strip()
             part_of_speech = string_max(part_of_speech, 10)
-            
-        definition_span = soup.find('span',attrs={"class": "def_text"})
-        if definition_span is None:
-            definition = None
-        else:
-            #[s.extract() for s in definition_span('span')]
-            #get rid of the example sentense quoted with span
-            
-            definition = definition_span.text.strip()
-            definition = string_max(definition, 200)
-    
-    else:
-        html = gethtml(webster_defintion_backup + word)
-        if not html is None : 
-            #find definition in http://www.learnersdictionary.com
-            soup = BeautifulSoup(html, "html.parser")
-            #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
-            part_of_speech_span = soup.find('span',attrs={"class": "fl"}) #dc_sth
-            if part_of_speech_span is None:
-                part_of_speech = 'NotFound'
-            else:
-                part_of_speech = part_of_speech_span.text.strip()
-                part_of_speech = string_max(part_of_speech, 10)
-                
-            definition_span = soup.find('span',attrs={"class": "dtText"})
+        
+        div = soup.find('div',attrs={"class": "sblock_c"}) 
+        if not div is None:
+            definition_span = div.find('span',attrs={"class": "def_text"})
             if definition_span is None:
-                definition = 'NotFound'
-            else:
-                [s.extract() for s in definition_span('span')]
-                #get rid of the example sentense quoted with span
+                #try antother tag
+                definition_span = div.find('span',attrs={"class": "un_text"})
+                
+            if not definition_span is None:
+                #[s.extract() for s in definition_span('span')]
+                #get rid of the example sentense quoted with span          
                 definition = definition_span.text.strip()
                 definition = string_max(definition, 200)
+
+
+    '''    
+    #no defintion is found, so try bing.cn        
+    if definition is None or part_of_speech is None:
+        html = gethtml(bing_url + word)
+        if not html is None : 
+            soup = BeautifulSoup(html, "html.parser")
+            #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
+            part_of_speech_div = soup.find('div',attrs={"class": "dc_sth"})
+            print(part_of_speech_div)
+            if not part_of_speech_div is None:
+                part_of_speech = part_of_speech_div.text.strip()
+                part_of_speech = string_max(part_of_speech, 10)
                 
-        else:        
-        #no definition!
-            print ("%s is not in the dictionary" % word)
-            return ( None, None, None , None)
+            definition_div = soup.find('div',attrs={"class": "dc_mn"})
+            print(definition_div)
+            if not definition_div is None:
+                definition = definition_div.text.strip()
+                definition = string_max(definition, 200)'''
+                
+    if definition is None or part_of_speech is None:
+        html = gethtml(wordsmyth + word)
+        if not html is None : 
+            try:
+                soup = BeautifulSoup(html, "html.parser")
+                tr = soup.find('tr',attrs={"class": "postitle"})
+                td = tr.find('td',attrs={"class": "data"})
+                #print(td.a.contents[0])
+                if not td.a.contents[0] is None:
+                    part_of_speech = td.a.contents[0].strip()
+                    part_of_speech = string_max(part_of_speech, 10)
     
+                tr = soup.find('tr',attrs={"class": "definition"})
+                td = tr.find('td',attrs={"class": "data"})
+                #print(td.contents[0])
+                if not td.contents[0] is None:
+                    definition = td.contents[0].strip()
+                    definition = string_max(definition, 200)
+            except:
+                 print(wordsmyth,"parse error")
+
     #get synonym and antonym
     html=gethtml(webster_thesaurus_url + word)
-    synonym = 'Not Found'
-    antonym = 'Not Found'
-
     if not html is None :
         soup = BeautifulSoup(html, "html.parser")
         #class="thes-list syn-list"
@@ -257,6 +285,22 @@ def check_word(thisword):
         for row in result:
             print(row)
 
+def update_vocabulary():
+    vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
+    s = select([vocabulary])
+    #.where(vocabulary.c.word == 'photo')
+    result = conn.execute(s)
+    if result.rowcount <= 0:
+        print("no word is in the talbe vocabulary now." )
+    else:
+        for row in result:
+            word = row['word']
+            print("\nupdateing this word: %s !" % word)
+            part_of_speech,definition,synonym,antonym = dict(word)
+            if (not definition is None) and (not part_of_speech is None):
+                upd = vocabulary.update().where(vocabulary.c.word == word).values(part_of_speech=part_of_speech,definition=definition,synonym=synonym,antonym=antonym)
+                #print(upd)
+                conn.execute(upd)            
 			
 def delete_word(thisword):
     vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
@@ -279,6 +323,7 @@ while True:
     print("2) delete word.")
     print("3) check word definition.")
     print("4) add new student.")
+    print("5) update definiton.")
     choiced = int(input("Please enter your choice:"))
     
     if choiced == 0:
@@ -287,18 +332,19 @@ while True:
     
     elif choiced == 1:
         print("\n\nLet's extend vocabulary!\n")
+        value = input("Please enter value for the new worldlist(default is 0, high priorty with negative number):")
         new_word_list_filename = input("Please enter worldlist filename:")
         print("\nWe are add new words from %s. \n" % new_word_list_filename)
-        add_new_word(new_word_list_filename)
+        #add_new_word(new_word_list_filename)
         student = input("Please enter the student name(all means every student):")
         
         if student == 'all':
             this_student = 'Francis'
-            insert_word(this_student,new_word_list_filename,new_or_old='new')
+            insert_word(this_student,new_word_list_filename,new_or_old='new',value=value)
             this_student = 'Peter'
-            insert_word(this_student,new_word_list_filename,new_or_old='new')
+            insert_word(this_student,new_word_list_filename,new_or_old='new',value=value)
             this_student = 'Matthew'
-            insert_word(this_student,new_word_list_filename,new_or_old='new')
+            insert_word(this_student,new_word_list_filename,new_or_old='new',value=value)
         else:
             insert_word(student,new_word_list_filename,new_or_old='new')
     
@@ -320,6 +366,8 @@ while True:
         new = input("Please enter how many new words to learn: (recommed 5)")
         insert_user(user,passwd,total,new)
 	
+    elif choiced == 5:
+        update_vocabulary()
 #update_user(user,passwd,total,new)
 
 

@@ -73,7 +73,7 @@ def dictate(student,today_totol,today_new):
         voice_engine.say(announcment)
         voice_engine.runAndWait()
         
-        stmt = text("SELECT * FROM wordlist WHERE student = :x and new = True order by value desc limit :y")
+        stmt = text("SELECT * FROM wordlist WHERE student = :x and new = True order by value limit :y")
         stmt = stmt.bindparams(x=student, y=today_new)
         #print(str(stmt))
         result = conn.execute(stmt).fetchall()
