@@ -123,7 +123,7 @@ def dictate(student,today_totol,today_new):
         voice_engine.say(announcment)
         voice_engine.runAndWait()
         
-        stmt = text("SELECT * FROM wordlist WHERE student = :x and new = False order by value limit :y")
+        stmt = text("SELECT * FROM wordlist WHERE student = :x and new = False order by (value + datediff(lasttime,curdate())) limit :y")
         stmt = stmt.bindparams(x=student, y=today_old)
         #print(str(stmt))
         result = conn.execute(stmt).fetchall()
@@ -280,7 +280,7 @@ def print_wordstat(student,dayago):
         day1 = date.today() - timedelta(days=theday+1)
         day2 = date.today() - timedelta(days=theday)
         print("\n===== %s ======" %day1)
-        stmt = text("SELECT * FROM wordlist WHERE student = :x and lasttime > :y and lasttime <= :z")
+        stmt = text("SELECT * FROM wordlist WHERE student = :x and lasttime > :y and lasttime <= :z and practice >1")
         stmt = stmt.bindparams(x=student,y=day1,z=day2)
         #print(str(stmt))
         result = conn.execute(stmt)
@@ -336,7 +336,15 @@ def update_vocie(local_voice_num):
                 path ='voice/%s.mp3' % thisword
                 if not os.path.exists(path) :
                     get_voice(thisword,path)
-	
+
+def update_database():
+    today = date.today()
+    wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
+    stmt = text("update wordlist set value = max(0 , value - datediff,lasttime)) where student ='Francis'; ")
+    stmt = stmt.bindparams(x=today)
+    result = conn.execute(stmt)
+
+    
 engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()

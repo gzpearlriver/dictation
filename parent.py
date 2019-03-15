@@ -67,7 +67,7 @@ def update_user(user,passwd,total,new):
     result = conn.execute(stmt)
 
 
-def insert_word(this_student,new_word_list_filename,new_or_old,value=0):
+def insert_word(this_student,new_word_list_filename,new_or_old,value):
     today = date.today()
     if new_or_old == 'new' or new_or_old =='New' :
         itisnew=True
@@ -102,7 +102,7 @@ def insert_word(this_student,new_word_list_filename,new_or_old,value=0):
             else:
                 print("insert this word into wordlist", line)
                 #for row in conn.execute(s):
-                ins=wordlist.insert().values(word=line, student=this_student, practice=0, value=value, correct=0 , wrong=0 ,new=itisnew, lasttime=today)
+                ins=wordlist.insert().values(word=line, student=this_student, practice=0, value=value, correct=0 , wrong=0 ,new=itisnew,lasttime=today)
                 result = conn.execute(ins)
 
 	
@@ -335,7 +335,7 @@ while True:
         value = input("Please enter value for the new worldlist(default is 0, high priorty with negative number):")
         new_word_list_filename = input("Please enter worldlist filename:")
         print("\nWe are add new words from %s. \n" % new_word_list_filename)
-        #add_new_word(new_word_list_filename)
+        add_new_word(new_word_list_filename)
         student = input("Please enter the student name(all means every student):")
         
         if student == 'all':
@@ -346,7 +346,7 @@ while True:
             this_student = 'Matthew'
             insert_word(this_student,new_word_list_filename,new_or_old='new',value=value)
         else:
-            insert_word(student,new_word_list_filename,new_or_old='new')
+            insert_word(student,new_word_list_filename,new_or_old='new',value=value)
     
     elif choiced == 2:
         thisword = input("Please enter the word to check: ")
