@@ -12,6 +12,8 @@ import os
 import pyttsx3
 
 from urllib import request
+import re
+from bs4 import BeautifulSoup
 
 import pygame  # pip install pygame
 
@@ -296,20 +298,34 @@ def print_wordstat(student,dayago):
     print("That's all.")
     print("="*60)
 
-def get_voice(word,path):
-    print("Getting voice of %s from internet.... " % word)
-    mp3url = 'https://fanyi.baidu.com/gettts?lan=en&text=%s&spd=3&source=web' % word
+def gethtml(url):
+    print("downloading  ", url)    
+    #page =u rllib2.urlopen(url)  #python 2.7
+    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
+    #proxies = { "http": "proxy.gmcc.net:8081", "https": "proxy.gmcc.net:8081", } 
+    try:
+        req = request.Request(url,headers=headers)
+        #req = request.Request(url,headers=headers,proxies=proxies)
+        page = request.urlopen(req).read()
+        page = page.decode('utf-8')
+    except:
+        page = None
+    return page
+
+def get_voice(word,mp3url,path):
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
     
     try:
         req = request.Request(mp3url, headers=headers)
-        response = request.urlopen(req).read()
+        response = request.urlopen(req)
+        content = response.read()
         with open(path,'wb') as f:
-            f.write(response)
+            f.write(content)
             f.close()
+            return True
     except:
-        print("downloa error or write error ....")
-
+        return False
+    
 def check_voice():
     path = 'voice'
     if not os.path.exists(path) or not os.path.isdir(path):
@@ -320,13 +336,17 @@ def check_voice():
         return None
 
 def update_vocie(local_voice_num):
+    print("\nupdating voice files.....")
     #get the number of words in vocabulary
-	
+    icba_url = 'http://www.iciba.com/'
+    
     vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
     stmt = text("SELECT count(*) as word_count FROM vocabulary")
     result = conn.execute(stmt).fetchone()
     total = result['word_count']
+
     if total > local_voice_num:
+        #there are more words in database than in the voice diretory
         vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
         stmt = text("SELECT * FROM vocabulary")
         result = conn.execute(stmt)
@@ -334,15 +354,31 @@ def update_vocie(local_voice_num):
             for row in result:
                 thisword = row['word']
                 path ='voice/%s.mp3' % thisword
-                if not os.path.exists(path) :
-                    get_voice(thisword,path)
+                print(path)
+                if not os.path.exists(path):
+                    #this word is not in the voice diretory
+                    result_voice = False
+                    try:
+                        html = gethtml(icba_url + thisword)
+                        if html is None:
+                            html = gethtml(icba_url + thisword)
+                        soup = BeautifulSoup(html, "html.parser")
+                        base_div = soup.find('div',attrs={"class": "base-speak"})
+                        mp3_i = base_div.find('i', attrs={"class": "new-speak-step"})
+                        cont =  mp3_i.attrs['ms-on-mouseover']
+                        mp3_url = re.findall(r'http.*mp3',cont)[0]
+                        result_voice = get_voice(thisword,mp3_url,path)
+                    except:
+                        print("error in getting voice from iciba.com")
+                    
+                    if result_voice == False:
+                        try:
+                            mp3_url = 'https://fanyi.baidu.com/gettts?lan=en&text=%s&spd=3&source=web' % thisword
+                            result_voice = get_voice(thisword,mp3_url,path)
+                        except:    
+                            print("error in getting voice from baidu.com")
+                            get_voice(thisword, mp3_url,path)
 
-def update_database():
-    today = date.today()
-    wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
-    stmt = text("update wordlist set value = max(0 , value - datediff,lasttime)) where student ='Francis'; ")
-    stmt = stmt.bindparams(x=today)
-    result = conn.execute(stmt)
 
     
 engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
@@ -352,6 +388,7 @@ voice_engine = pyttsx3.init()
 
 local_voice_num = check_voice()
 print('Info : number of local voices is %d. \n' % local_voice_num)
+
 
 voice_engine.say("Please enter your name.")
 voice_engine.runAndWait()
@@ -376,7 +413,8 @@ else:
         mystudents = get_relation(this_student)
         for onestudent in mystudents:
             print_wordstat(onestudent,8)
-            
+    
+
 update_vocie(local_voice_num)
 			
 #create_table()
