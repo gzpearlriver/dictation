@@ -235,7 +235,7 @@ def dictate_oneword(word):
         print("You spelt incorrectly. You have to practie it for 5 times.\n")
         for i in range(5):
             while(True):
-                print("\nPlease type the word %s ! This is the %i time.   " % (word,i))
+                print("\nPlease type the word '%s' ! This is the %i time.   " % (word,i))
                 answer = input()
                 if answer == word:
                     break
