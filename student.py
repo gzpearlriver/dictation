@@ -68,7 +68,6 @@ def dictate(student,today_totol,today_new):
     voice_engine.say(announcment)
     voice_engine.runAndWait()
     
-
     if today_new > 0 :
         announcment = "\nLet's begin to try the new words."
         print('\n',announcment)
@@ -117,7 +116,7 @@ def dictate(student,today_totol,today_new):
             s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,value=value,wrong=wrong,correct=correct,practice=practice+1,new=False)
             #print(s)
             result = conn.execute(s)
-        
+
 
     if today_old > 0 :
         announcment = "\nLet's pratice to spell words we have already learned."
@@ -136,7 +135,7 @@ def dictate(student,today_totol,today_new):
             correct = row[wordlist.c.correct]
             value = row[wordlist.c.value]
             practice = row[wordlist.c.practice]
-           
+            #print(word,row[wordlist.c.lasttime],value)
             dict_correct = dictate_oneword(word)  
             
             if dict_correct:
@@ -206,41 +205,64 @@ def dictate_oneword(word):
     path ='voice/%s.mp3' % word
     if os.path.exists(path) and os.path.isfile(path) :
         playMusic(path)
-        
         voice_engine.say("Repeat. The word is:")
         voice_engine.runAndWait()
-        
         playMusic(path)
     
     else:
         voice_engine.say(word)
         voice_engine.runAndWait()
-
         voice_engine.say("Repeat. The word is:")
         voice_engine.runAndWait()
-
         voice_engine.say(word)
         voice_engine.runAndWait()
     
     print("The word you are going to spell is a %s .\n" % part_of_speech)
     print("Its definition is '%s' .\n" %  definition)
     print("Its synonym are '%s' .\n" %  synonym)
-    print("Its antonym are '%s' .\n" %  antonym)    
-    answer = input("So the word is : ")
-    if answer == word:
-        print("Good! You spelt correctly. \n\n")
-        #os.system("Any key to move on. \n")
-        return True
-    else:
-        print("You spelt incorrectly. You have to practie it for 5 times.\n")
-        for i in range(5):
-            while(True):
-                print("\nPlease type the word '%s' ! This is the %i time.   " % (word,i))
-                answer = input()
-                if answer == word:
-                    break
-        #os.system("Any key to move on. \n")
-        return False        
+    print("Its antonym are '%s' .\n" %  antonym)
+    lefttime = 6
+    while (lefttime > 0):
+        print("Attention!If you input letter 'r' or 'R', you can hear the pronuciation again! You have %s times left" % lefttime)
+        answer = input("So the word is :")
+        if answer == word:
+            print("Good! You spelt correctly. \n\n")
+            #os.system("Any key to move on. \n")
+            return True
+        elif answer == 'r' or answer == 'R':
+            lefttime -= 1
+            if os.path.exists(path) and os.path.isfile(path) :
+                playMusic(path)
+                voice_engine.say("Repeat. The word is:")
+                voice_engine.runAndWait()
+                playMusic(path)
+            else:
+                voice_engine.say(word)
+                voice_engine.runAndWait()
+                voice_engine.say("Repeat. The word is:")
+                voice_engine.runAndWait()
+                voice_engine.say(word)
+                voice_engine.runAndWait()
+        else:
+            print("You spelt incorrectly. You have to practie it for 5 times.\n")
+            for i in range(5):
+                while(True):
+                    print("\nPlease type the word '%s' ! This is the %i time.   " % (word,i))
+                    answer = input()
+                    if answer == word:
+                        break
+            #os.system("Any key to move on. \n")
+            return False
+    
+    print("\n\nYou have heard the pronuciation too many times. You should practie it for 5 times.\n")
+    for i in range(5):
+        while(True):
+            print("\nPlease type the word '%s' ! This is the %i time.   " % (word,i))
+            answer = input()
+            if answer == word:
+                break
+    #os.system("Any key to move on. \n")
+    return False
    
 
 def get_student(student):
