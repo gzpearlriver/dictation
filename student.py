@@ -304,7 +304,7 @@ def print_wordstat(student,dayago):
         day1 = date.today() - timedelta(days=theday+1)
         day2 = date.today() - timedelta(days=theday)
         print("\n===== %s ======" %day1)
-        stmt = text("SELECT * FROM wordlist WHERE student = :x and lasttime > :y and lasttime <= :z and practice >1")
+        stmt = text("SELECT * FROM wordlist WHERE student = :x and lasttime > :y and lasttime <= :z and practice >0")
         stmt = stmt.bindparams(x=student,y=day1,z=day2)
         #print(str(stmt))
         result = conn.execute(stmt)

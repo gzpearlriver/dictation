@@ -98,7 +98,10 @@ def insert_word(this_student,new_word_list_filename,new_or_old,value):
             #print(result)
         
             if result.rowcount > 0:
-                print("already in the database")
+                print("already in the database......update the value only")
+                upd = wordlist.update().where(and_(wordlist.c.word == line , wordlist.c.student == this_student)).values(value=value)
+                #print(upd)
+                conn.execute(upd)
             else:
                 print("insert this word into wordlist", line)
                 #for row in conn.execute(s):
@@ -317,7 +320,7 @@ metadata = MetaData(engine)
 conn = engine.connect()
 
 while True:
-    print("\nWelcom! This the program for parent. \n\n")
+    print("\nWelcome! This the program for parent. \n\n")
     print("0) quit.")
     print("1) add new wordlist.")
     print("2) delete word.")
