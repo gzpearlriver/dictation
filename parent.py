@@ -60,13 +60,26 @@ def add_relation(parentlist,studentlist):
             ins = relationship.insert().values(parent=parent,student=student)
             result = conn.execute(ins)
 	
-def update_user(user,passwd,total,new):
+def update_student(user,passwd,total,new):
     student = Table('student', metadata, autoload=True, autoload_with=engine)
     stmt = student.update().where(student.c.name == user).values(password=passwd,total_per_day=total,new_per_day=new)
     #print(s)
     result = conn.execute(stmt)
 
-
+def list_student():
+    wordlist = Table('student', metadata, autoload=True, autoload_with=engine)
+    
+    stmt = text("SELECT * FROM student")
+    result = conn.execute(stmt)
+    if result.rowcount > 0:
+        print("%-30s%-20s%-20s" %("name","total_per_day","new_per_day"))
+        for row in result:
+            print("%-30s%-20s%-20s" %(row['name'],row['total_per_day'],row['new_per_day']))
+        
+    print("\nThat's all.")
+    print("="*60)
+    print("\n")
+    
 def insert_word(this_student,new_word_list_filename,new_or_old,value):
     today = date.today()
     if new_or_old == 'new' or new_or_old =='New' :
@@ -314,21 +327,64 @@ def delete_word(thisword):
     stmt=wordlist.delete().where(wordlist.c.word == thisword)
     print(stmt)
     conn.execute(stmt)
+
+    
+def list_wordlist(student,orderby = 'value'):
+    wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
+    
+    #new words
+    print("\n%s 's top 10 new words in his or her list: \n" %student)
+    stmt = text("SELECT * FROM wordlist WHERE student = :x and new = True order by value limit 10 ")
+    stmt = stmt.bindparams(x=student)
+    print(str(stmt))
+    result = conn.execute(stmt)
+    if result.rowcount > 0:
+        print("%-30s%-30s%-10s%-10s%-10s%-10s" %("word","lasttime","practiced","correct","wrong","value"))
+        for row in result:
+            print("%-30s%-30s%-10s%-10s%-10s%-10s" %(row['word'],row['lasttime'],row['practice'],row['correct'],row['wrong'],row['value']))
+        
+    print("\nThat's all.")
+    print("="*60)
+    print("\n")
+    
+    #old words
+    print("\n%s 's old words in his or her list: \n" %student)
+    stmt = text("SELECT * FROM wordlist WHERE student = :x  and new = False order by value ")
+    stmt = stmt.bindparams(x=student)
+    print(str(stmt))
+    result = conn.execute(stmt)
+    if result.rowcount > 0:
+        print("%-30s%-30s%-10s%-10s%-10s%-10s" %("word","lasttime","practiced","correct","wrong","value"))
+        for row in result:
+            print("%-30s%-30s%-10s%-10s%-10s%-10s" %(row['word'],row['lasttime'],row['practice'],row['correct'],row['wrong'],row['value']))
+        
+    print("\nThat's all.")
+    print("="*60)    
+    print("\n")
 	
 engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
 
+print("\nWelcome! This the program for parent. \n\n")
+
 while True:
-    print("\nWelcome! This the program for parent. \n\n")
     print("0) quit.")
     print("1) add new wordlist.")
     print("2) delete word.")
     print("3) check word definition.")
     print("4) add new student.")
     print("5) update definiton.")
-    choiced = int(input("Please enter your choice:"))
-    
+    print("6) list student's wordlist.")
+    print("7) list students.")
+    print("8) update student's config.")
+    choiced = input("Please enter your choice:")
+
+    if not choiced.isdigit():
+        print("Please input a digit.\n")
+        continue
+              
+    choiced = int(choiced)
     if choiced == 0:
         print("see you .....")
         break
@@ -371,8 +427,16 @@ while True:
 	
     elif choiced == 5:
         update_vocabulary()
-#update_user(user,passwd,total,new)
 
+    elif choiced == 6:
+        student = input("Please enter the student name: ")
+        list_wordlist(student)
+        
+    elif choiced == 7:
+        list_student()
+
+    elif choiced == 8:
+        update_student('Peter','2018',12,5)
 
 '''
 #add parent
