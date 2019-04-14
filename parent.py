@@ -72,13 +72,31 @@ def list_student():
     stmt = text("SELECT * FROM student")
     result = conn.execute(stmt)
     if result.rowcount > 0:
-        print("%-30s%-20s%-20s" %("name","total_per_day","new_per_day"))
+        print("%-30s%-20s%-20s%-20s%-20s%-20s" %("name","total_per_day","new_per_day","practice_word","master_word","new_word"))
         for row in result:
-            print("%-30s%-20s%-20s" %(row['name'],row['total_per_day'],row['new_per_day']))
+            student = row['name']
+            
+            stmt_count = text("SELECT count(*) as practice_word FROM wordlist WHERE student = :x and new = False")
+            stmt_count = stmt_count.bindparams(x=student)
+            result_count = conn.execute(stmt_count).fetchone()
+            practice_word = result_count['practice_word']
+
+            stmt_count = text("SELECT count(*) as master_word FROM wordlist WHERE student = :x and value>0 and new = False")
+            stmt_count = stmt_count.bindparams(x=student)
+            result_count = conn.execute(stmt_count).fetchone()
+            master_word = result_count['master_word']
+
+            stmt_count = text("SELECT count(*) as new_word FROM wordlist WHERE student = :x and new = True")
+            stmt_count = stmt_count.bindparams(x=student)
+            result_count = conn.execute(stmt_count).fetchone()
+            new_word = result_count['new_word']
+
+            print("%-30s%-20s%-20s%-20s%-20s%-20s" %(row['name'],row['total_per_day'],row['new_per_day'],practice_word,master_word,new_word))
         
-    print("\nThat's all.")
+    print("\nThat's all student's config.")
     print("="*60)
     print("\n")
+
     
 def insert_word(this_student,new_word_list_filename,new_or_old,value):
     today = date.today()
@@ -184,7 +202,13 @@ def dict(word):
                 #get rid of the example sentense quoted with span          
                 definition = definition_span.text.strip()
                 definition = string_max(definition, 200)
-
+        else:
+            div = soup.find('div',attrs={"class": "cxs"})
+            if not div is None:
+                #print(type(div.text))
+                definition = div.text.strip().replace('\n',' ')
+                definition = string_max(definition, 200)
+                part_of_speech = 'noun'
 
     '''    
     #no defintion is found, so try bing.cn        
@@ -436,7 +460,11 @@ while True:
         list_student()
 
     elif choiced == 8:
-        update_student('Peter','2018',12,5)
+        student = input("Please enter the student name: ")
+        #password = input("Please enter the password: ")
+        total = input("Please enter how many words to practice: (recommend 10) ")
+        new = input("Please enter how many new words to learn: (recommed 5)")
+        update_student(student,'2018',total,new)
 
 '''
 #add parent
