@@ -98,7 +98,7 @@ def list_student():
     print("\n")
 
     
-def insert_word(this_student,new_word_list_filename,new_or_old,value):
+def insert_word(this_student,new_word_list_filename,new_or_old,initial):
     today = date.today()
     if new_or_old == 'new' or new_or_old =='New' :
         itisnew=True
@@ -129,14 +129,14 @@ def insert_word(this_student,new_word_list_filename,new_or_old,value):
             #print(result)
         
             if result.rowcount > 0:
-                print("already in the database......update the value only")
-                upd = wordlist.update().where(and_(wordlist.c.word == line , wordlist.c.student == this_student)).values(value=value)
+                print("already in the database......update the initial only")
+                upd = wordlist.update().where(and_(wordlist.c.word == line , wordlist.c.student == this_student)).values(initial=initial)
                 #print(upd)
                 conn.execute(upd)
             else:
                 print("insert this word into wordlist", line)
                 #for row in conn.execute(s):
-                ins=wordlist.insert().values(word=line, student=this_student, practice=0, value=value, correct=0 , wrong=0 ,new=itisnew,lasttime=today)
+                ins=wordlist.insert().values(word=line, student=this_student, practice=0, initial=initial, correct=0 , wrong=0 ,new=itisnew,lasttime=today)
                 result = conn.execute(ins)
 
 	
@@ -358,14 +358,14 @@ def list_wordlist(student,orderby = 'value'):
     
     #new words
     print("\n%s 's top 10 new words in his or her list: \n" %student)
-    stmt = text("SELECT * FROM wordlist WHERE student = :x and new = True order by value limit 10 ")
+    stmt = text("SELECT * FROM wordlist WHERE student = :x and new = True order by initial limit 10 ")
     stmt = stmt.bindparams(x=student)
     print(str(stmt))
     result = conn.execute(stmt)
     if result.rowcount > 0:
-        print("%-30s%-30s%-10s%-10s%-10s%-10s" %("word","lasttime","practiced","correct","wrong","value"))
+        print("%-30s%-30s%-10s%-10s%-10s%-10s" %("word","lasttime","practiced","correct","wrong","initial"))
         for row in result:
-            print("%-30s%-30s%-10s%-10s%-10s%-10s" %(row['word'],row['lasttime'],row['practice'],row['correct'],row['wrong'],row['value']))
+            print("%-30s%-30s%-10s%-10s%-10s%-10s" %(row['word'],row['lasttime'],row['practice'],row['correct'],row['wrong'],row['initial']))
         
     print("\nThat's all.")
     print("="*60)
@@ -373,14 +373,14 @@ def list_wordlist(student,orderby = 'value'):
     
     #old words
     print("\n%s 's old words in his or her list: \n" %student)
-    stmt = text("SELECT * FROM wordlist WHERE student = :x  and new = False order by value ")
+    stmt = text("SELECT * FROM wordlist WHERE student = :x  and new = False order by (value+initial) ")
     stmt = stmt.bindparams(x=student)
     print(str(stmt))
     result = conn.execute(stmt)
     if result.rowcount > 0:
-        print("%-30s%-30s%-10s%-10s%-10s%-10s" %("word","lasttime","practiced","correct","wrong","value"))
+        print("%-30s%-30s%-10s%-10s%-10s%-10s%-20s" %("word","lasttime","practiced","correct","wrong","initial","value+initial"))
         for row in result:
-            print("%-30s%-30s%-10s%-10s%-10s%-10s" %(row['word'],row['lasttime'],row['practice'],row['correct'],row['wrong'],row['value']))
+            print("%-30s%-30s%-10s%-10s%-10s%-10s%-20s" %(row['word'],row['lasttime'],row['practice'],row['correct'],row['wrong'],row['initial'],row['value']+row['initial']))
         
     print("\nThat's all.")
     print("="*60)    
@@ -398,7 +398,7 @@ while True:
     print("2) delete word.")
     print("3) check word definition.")
     print("4) add new student.")
-    print("5) update definiton.")
+    print("5) update all definiton in the database(don't do that).")
     print("6) list student's wordlist.")
     print("7) list students.")
     print("8) update student's config.")
@@ -415,7 +415,7 @@ while True:
     
     elif choiced == 1:
         print("\n\nLet's extend vocabulary!\n")
-        value = input("Please enter value for the new worldlist(default is 0, high priorty with negative number):")
+        initial = input("Please enter initial value for the new worldlist(default is 0, high priorty with negative number):")
         new_word_list_filename = input("Please enter worldlist filename:")
         print("\nWe are add new words from %s. \n" % new_word_list_filename)
         add_new_word(new_word_list_filename)
@@ -423,13 +423,13 @@ while True:
         
         if student == 'all':
             this_student = 'Francis'
-            insert_word(this_student,new_word_list_filename,new_or_old='new',value=value)
+            insert_word(this_student,new_word_list_filename,new_or_old='new',initial=initial)
             this_student = 'Peter'
-            insert_word(this_student,new_word_list_filename,new_or_old='new',value=value)
+            insert_word(this_student,new_word_list_filename,new_or_old='new',initial=initial)
             this_student = 'Matthew'
-            insert_word(this_student,new_word_list_filename,new_or_old='new',value=value)
+            insert_word(this_student,new_word_list_filename,new_or_old='new',initial=initial)
         else:
-            insert_word(student,new_word_list_filename,new_or_old='new',value=value)
+            insert_word(student,new_word_list_filename,new_or_old='new',initial=initial)
     
     elif choiced == 2:
         thisword = input("Please enter the word to check: ")

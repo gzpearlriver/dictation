@@ -74,7 +74,7 @@ def dictate(student,today_totol,today_new):
         voice_engine.say(announcment)
         voice_engine.runAndWait()
         
-        stmt = text("SELECT * FROM wordlist WHERE student = :x and new = True order by value limit :y")
+        stmt = text("SELECT * FROM wordlist WHERE student = :x and new = True order by initial limit :y")
         stmt = stmt.bindparams(x=student, y=today_new)
         #print(str(stmt))
         result = conn.execute(stmt).fetchall()
@@ -84,6 +84,7 @@ def dictate(student,today_totol,today_new):
             wrong = row[wordlist.c.wrong]
             correct = row[wordlist.c.correct]
             value = row[wordlist.c.value]
+            initial = row[wordlist.c.initial]
             practice = row[wordlist.c.practice]
             
             dict_correct = dictate_oneword(word) 
@@ -97,7 +98,7 @@ def dictate(student,today_totol,today_new):
                     #其他情况
                     correct = 1
                     wrong = 0
-                value += 2**correct
+                value = 2**correct
                 #提升value值，至少2
                 
             else:
@@ -109,7 +110,7 @@ def dictate(student,today_totol,today_new):
                     #其他情况
                     wrong = 1
                     correct = 0
-                value -= 5*wrong
+                value = (-2)*wrong
                 #降低value值，至少减5
                 
             #print (value,correct,wrong)    
@@ -124,7 +125,7 @@ def dictate(student,today_totol,today_new):
         voice_engine.say(announcment)
         voice_engine.runAndWait()
         
-        stmt = text("SELECT * FROM wordlist WHERE student = :x and new = False order by (value + datediff(lasttime,curdate())) limit :y")
+        stmt = text("SELECT * FROM wordlist WHERE student = :x and new = False order by (value + initial + datediff(lasttime,curdate())) limit :y")
         stmt = stmt.bindparams(x=student, y=today_old)
         #print(str(stmt))
         result = conn.execute(stmt).fetchall()
@@ -134,8 +135,10 @@ def dictate(student,today_totol,today_new):
             wrong = row[wordlist.c.wrong]
             correct = row[wordlist.c.correct]
             value = row[wordlist.c.value]
+            initial = row[wordlist.c.initial]
             practice = row[wordlist.c.practice]
             #print(word,row[wordlist.c.lasttime],value)
+            
             dict_correct = dictate_oneword(word)  
             
             if dict_correct:
@@ -147,7 +150,7 @@ def dictate(student,today_totol,today_new):
                     #其他情况
                     correct = 1
                     wrong = 0
-                value += 2**correct
+                value = 2**correct
                 #提升value值，至少2
                 
             else:
@@ -159,11 +162,14 @@ def dictate(student,today_totol,today_new):
                     #其他情况
                     wrong = 1
                     correct = 0
-                value -= 5*wrong
+                value = (-5)*wrong
                 #降低value值，至少减5
                 
-            #print (value,correct,wrong)
-            s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,value=value,wrong=wrong,correct=correct,practice=practice+1)
+            initial = min(0, initial+2)
+            #every time you practice, initial will get closer to 0 from negtive . it means it has less chance to be pick up.
+            
+            print (initial,value,correct,wrong)
+            s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,initial=initial,value=value,wrong=wrong,correct=correct,practice=practice+1)
             #print(s)
             result = conn.execute(s)
 			
