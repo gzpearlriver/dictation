@@ -98,8 +98,10 @@ def dictate(student,today_totol,today_new):
                     #其他情况
                     correct = 1
                     wrong = 0
-                value = 2**correct
-                #提升value值，至少2
+                
+                value = 0 
+                #因为这是new单词
+
                 
             else:
                 #本次错误
@@ -110,10 +112,10 @@ def dictate(student,today_totol,today_new):
                     #其他情况
                     wrong = 1
                     correct = 0
-                value = (-2)*wrong
-                #降低value值，至少减5
+                value = 0 - wrong
+                #降低value值，提高练习优先度
                 
-            #print (value,correct,wrong)    
+            print (word,"   ----    initial:",initial,"value:",value,"correct:",correct,"wrong:",wrong)  
             s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,value=value,wrong=wrong,correct=correct,practice=practice+1,new=False)
             #print(s)
             result = conn.execute(s)
@@ -150,8 +152,13 @@ def dictate(student,today_totol,today_new):
                     #其他情况
                     correct = 1
                     wrong = 0
-                value = 2**correct
-                #提升value值，至少2
+                    
+                if correct > 3:
+                    value = practice + 2**correct
+                    #3次以上正确，练习间隔等于已练习次数 + 连续正常的2次幂
+                else:
+                    value = 1
+                    #3次以内连续正确，较短时间内重复
                 
             else:
                 #本次错误
@@ -162,13 +169,13 @@ def dictate(student,today_totol,today_new):
                     #其他情况
                     wrong = 1
                     correct = 0
-                value = (-5)*wrong
-                #降低value值，至少减5
+                value = 0 - wrong
+                #降低value值，提高练习优先度，但保持initial的高优先度
                 
             initial = min(0, initial+2)
             #every time you practice, initial will get closer to 0 from negtive . it means it has less chance to be pick up.
             
-            print (initial,value,correct,wrong)
+            print (word,"   ----    initial:",initial,"value:",value,"correct:",correct,"wrong:",wrong)  
             s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,initial=initial,value=value,wrong=wrong,correct=correct,practice=practice+1)
             #print(s)
             result = conn.execute(s)
@@ -232,7 +239,7 @@ def dictate_oneword(word):
         print("Attention!If you input letter 'r' or 'R', you can hear the pronuciation again! You have %s times left" % lefttime)
         answer = input("So the word is :")
         if answer == word:
-            print("Good! You spelt correctly. \n\n")
+            print("Good! You spelt correctly.")
             #os.system("Any key to move on. \n")
             return True
         elif answer == 'r' or answer == 'R':
@@ -309,15 +316,15 @@ def print_wordstat(student,dayago):
     for theday in range (dayago + 1):
         day1 = date.today() - timedelta(days=theday+1)
         day2 = date.today() - timedelta(days=theday)
-        print("\n===== %s ======" %day1)
+        print("\n===== %s  < date <=  %s ======" % (day1,day2))
         stmt = text("SELECT * FROM wordlist WHERE student = :x and lasttime > :y and lasttime <= :z and practice >0")
         stmt = stmt.bindparams(x=student,y=day1,z=day2)
         #print(str(stmt))
         result = conn.execute(stmt)
         if result.rowcount > 0:
-            print("%-30s%-10s%-10s%-10s%-10s" %("word","practiced","correct","wrong","value"))
+            print("%-30s%-10s%-10s%-10s%-10s%-10s" %("word","practiced","correct","wrong","initial","value"))
             for row in result:
-                print("%-30s%-10s%-10s%-10s%-10s" %(row['word'],row['practice'],row['correct'],row['wrong'],row['value']))
+                print("%-30s%-10s%-10s%-10s%-10s%-10s" %(row['word'],row['practice'],row['correct'],row['wrong'],row['initial'],row['value']))
         else:
             print("No word is practiced!\n")
     
@@ -444,6 +451,8 @@ else:
     
 
 update_vocie(local_voice_num)
+
+conn.close()
 			
 #create_table()
 #insert_user()
