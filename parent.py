@@ -129,14 +129,14 @@ def insert_word(this_student,new_word_list_filename,new_or_old,initial):
             #print(result)
         
             if result.rowcount > 0:
-                print("already in the database......update the initial only")
-                upd = wordlist.update().where(and_(wordlist.c.word == line , wordlist.c.student == this_student)).values(initial=initial)
+                print("%s already in the database......update the initial only" % line)
+                upd = wordlist.update().where(and_(wordlist.c.word == line , wordlist.c.student == this_student)).values(initial=initial, new=itisnew, lasttime=today)
                 #print(upd)
                 conn.execute(upd)
             else:
                 print("insert this word into wordlist", line)
                 #for row in conn.execute(s):
-                ins=wordlist.insert().values(word=line, student=this_student, practice=0, initial=initial, correct=0 , wrong=0 ,new=itisnew,lasttime=today)
+                ins=wordlist.insert().values(word=line, student=this_student, practice=0, initial=initial, value =0, correct=0 , wrong=0 ,new=itisnew, lasttime=today)
                 result = conn.execute(ins)
 
 	
@@ -292,7 +292,7 @@ def add_new_word(new_word_list_filename):
             print("insert this word: %s !" % line)
             #for row in conn.execute(s):
             part_of_speech,definition,synonym,antonym = dict(line)
-            if (not definition is None) and (not part_of_speech is None):
+            if (not definition is None) :
                 ins = vocabulary.insert().values(word = line,part_of_speech=part_of_speech,definition=definition,synonym=synonym,antonym=antonym)
                 print(ins)
                 result = conn.execute(ins)
@@ -386,7 +386,7 @@ def list_wordlist(student,orderby = 'value'):
     print("="*60)    
     print("\n")
 	
-engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
+engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.178:3306/mysql", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
 

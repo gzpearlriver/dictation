@@ -201,7 +201,7 @@ def dictate_oneword(word):
     #print('working on word: %s' % word)
     #os.system("cls") # windows
 
-    voice_engine.say('\n\nNow listen carefully and spell the word.')
+    voice_engine.say('Now listen carefully and spell the word.')
     voice_engine.runAndWait()
 
     stmt = text("SELECT * FROM vocabulary WHERE word = :x ")
@@ -230,7 +230,7 @@ def dictate_oneword(word):
         voice_engine.say(word)
         voice_engine.runAndWait()
     
-    print("The word you are going to spell is a %s .\n" % part_of_speech)
+    print("\n\nThe word you are going to spell is a %s .\n" % part_of_speech)
     print("Its definition is '%s' .\n" %  definition)
     print("Its synonym are '%s' .\n" %  synonym)
     print("Its antonym are '%s' .\n" %  antonym)
@@ -416,7 +416,7 @@ def update_vocie(local_voice_num):
 
 
     
-engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.46:3306/mysql", max_overflow=5)
+engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.178:3306/mysql", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
 voice_engine = pyttsx3.init()
