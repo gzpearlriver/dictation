@@ -386,7 +386,7 @@ def list_wordlist(student,orderby = 'value'):
     print("="*60)    
     print("\n")
 	
-engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.178:3306/mysql", max_overflow=5)
+engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.26:3306/mysql", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
 
