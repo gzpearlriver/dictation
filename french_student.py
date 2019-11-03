@@ -12,6 +12,8 @@ import os
 import pyttsx3
 
 from urllib import request
+import urllib
+
 import re
 from bs4 import BeautifulSoup
 
@@ -44,8 +46,8 @@ def dictate(student,today_totol,today_new):
     today = date.today()
     
     #get the number of new wornds
-    wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
-    stmt = text("SELECT count(*) as word_count FROM wordlist WHERE student = :x and new = True")
+    wordlist = Table('french_wordlist', metadata, autoload=True, autoload_with=engine)
+    stmt = text("SELECT count(*) as word_count FROM french_wordlist WHERE student = :x and new = True")
     stmt = stmt.bindparams(x=student)
     #print(str(stmt))
     result = conn.execute(stmt).fetchone()
@@ -74,13 +76,13 @@ def dictate(student,today_totol,today_new):
         voice_engine.say(announcment)
         voice_engine.runAndWait()
         
-        stmt = text("SELECT * FROM wordlist WHERE student = :x and new = True order by initial limit :y")
+        stmt = text("SELECT * FROM french_wordlist WHERE student = :x and new = True order by initial limit :y")
         stmt = stmt.bindparams(x=student, y=today_new)
         #print(str(stmt))
         result = conn.execute(stmt).fetchall()
         for row in result:
             word = row[wordlist.c.word]
-            word = row['word']
+            #word = row['word']
             wrong = row[wordlist.c.wrong]
             correct = row[wordlist.c.correct]
             value = row[wordlist.c.value]
@@ -127,13 +129,13 @@ def dictate(student,today_totol,today_new):
         voice_engine.say(announcment)
         voice_engine.runAndWait()
         
-        stmt = text("SELECT * FROM wordlist WHERE student = :x and new = False order by (value + initial + datediff(lasttime,curdate())) limit :y")
+        stmt = text("SELECT * FROM french_wordlist WHERE student = :x and new = False order by (value + initial + datediff(lasttime,curdate())) limit :y")
         stmt = stmt.bindparams(x=student, y=today_old)
         #print(str(stmt))
         result = conn.execute(stmt).fetchall()
         for row in result:
             word = row[wordlist.c.word]
-            word = row['word']
+            #word = row['word']
             wrong = row[wordlist.c.wrong]
             correct = row[wordlist.c.correct]
             value = row[wordlist.c.value]
@@ -186,7 +188,7 @@ def dictate(student,today_totol,today_new):
     voice_engine.say(announcment)
     voice_engine.runAndWait()
 
-    stmt = text("SELECT count(*) as master_word FROM wordlist WHERE student = :x and value>0")
+    stmt = text("SELECT count(*) as master_word FROM french_wordlist WHERE student = :x and value>0")
     stmt = stmt.bindparams(x=student)
     result = conn.execute(stmt).fetchone()
     master_word = result['master_word']
@@ -204,18 +206,16 @@ def dictate_oneword(word):
     voice_engine.say('Now listen carefully and spell the word.')
     voice_engine.runAndWait()
 
-    stmt = text("SELECT * FROM vocabulary WHERE word = :x ")
+    stmt = text("SELECT * FROM french WHERE french = :x ")
     stmt = stmt.bindparams(x=word)
     #print(str(stmt))
     vocabulary_row = conn.execute(stmt).fetchone()
-    definition = vocabulary_row['definition']
+    definition = vocabulary_row['english']
     part_of_speech = vocabulary_row['part_of_speech']
-    antonym = vocabulary_row['antonym']
-    synonym = vocabulary_row['synonym']
     
     #play announcment
 
-    path ='voice/%s.mp3' % word
+    path ='french/%s.mp3' % word
     if os.path.exists(path) and os.path.isfile(path) :
         playMusic(path)
         voice_engine.say("Repeat. The word is:")
@@ -231,9 +231,8 @@ def dictate_oneword(word):
         voice_engine.runAndWait()
     
     print("\n\nThe word you are going to spell is a %s .\n" % part_of_speech)
-    print("Its definition is '%s' .\n" %  definition)
-    print("Its synonym are '%s' .\n" %  synonym)
-    print("Its antonym are '%s' .\n" %  antonym)
+    print("Its English explanation is '%s' .\n" %  definition)
+
     lefttime = 6
     while (lefttime > 0):
         print("Attention!If you input letter 'r' or 'R', you can hear the pronuciation again! You have %s times left" % lefttime)
@@ -280,8 +279,8 @@ def dictate_oneword(word):
 
 def get_student(student):
     #get the number of new wornds
-    wordlist = Table('student', metadata, autoload=True, autoload_with=engine)
-    stmt = text("SELECT * FROM student WHERE name = :x ")
+    wordlist = Table('french_student', metadata, autoload=True, autoload_with=engine)
+    stmt = text("SELECT * FROM french_student WHERE name = :x ")
     stmt = stmt.bindparams(x=student)
     #print(str(stmt))
     result = conn.execute(stmt)
@@ -297,8 +296,8 @@ def get_student(student):
 
 def get_relation(parent):
     mystudents =[]
-    myrelation = Table('relationship', metadata, autoload=True, autoload_with=engine)
-    stmt = text("SELECT * FROM relationship WHERE parent = :x ")
+    myrelation = Table('french_relationship', metadata, autoload=True, autoload_with=engine)
+    stmt = text("SELECT * FROM french_relationship WHERE parent = :x ")
     stmt = stmt.bindparams(x=parent)
     #print(str(stmt))
     result = conn.execute(stmt)
@@ -311,13 +310,13 @@ def get_relation(parent):
 
 def print_wordstat(student,dayago):
     print("\n%s has practised these words this week: \n" %student)
-    wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
+    wordlist = Table('french_wordlist', metadata, autoload=True, autoload_with=engine)
     
     for theday in range (dayago + 1):
         day1 = date.today() - timedelta(days=theday+1)
         day2 = date.today() - timedelta(days=theday)
         print("\n===== %s  < date <=  %s ======" % (day1,day2))
-        stmt = text("SELECT * FROM wordlist WHERE student = :x and lasttime > :y and lasttime <= :z and practice >0")
+        stmt = text("SELECT * FROM french_wordlist WHERE student = :x and lasttime > :y and lasttime <= :z and practice >0")
         stmt = stmt.bindparams(x=student,y=day1,z=day2)
         #print(str(stmt))
         result = conn.execute(stmt)
@@ -361,59 +360,62 @@ def get_voice(word,mp3url,path):
     except:
         return False
     
-def check_voice():
-    path = 'voice'
+def check_french_voice():
+    path = 'french'
     if not os.path.exists(path) or not os.path.isdir(path):
-        os.mkdir('voice')
+        os.mkdir('french')
     if os.access(path, os.W_OK):
         return len([lists for lists in os.listdir(path) if os.path.isfile(os.path.join(path, lists))])
     else:
         return None
 
-def update_vocie(local_voice_num):
-    print("\nupdating voice files.....")
+def update_french_vocie(local_voice_num):
+    print("\nupdating French voice files.....")
     #get the number of words in vocabulary
-    icba_url = 'http://www.iciba.com/'
+    #icba_url = 'http://www.iciba.com/'
+    french_def_url = 'https://www.collinsdictionary.com/dictionary/french-english/'
     
-    vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
-    stmt = text("SELECT count(*) as word_count FROM vocabulary")
+    vocabulary = Table('french', metadata, autoload=True, autoload_with=engine)
+    stmt = text("SELECT count(*) as word_count FROM french")
     result = conn.execute(stmt).fetchone()
     total = result['word_count']
-    print('local vocie: %d ;  words in database: %d .'  % (local_voice_num,total) )
-    
-    #there are more words in database than in the voice diretory
-    vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
-    stmt = text("SELECT * FROM vocabulary")
-    result = conn.execute(stmt)
-    
-    if result.rowcount > 0:
-        for row in result:
-            thisword = row['word']
-            path ='voice/%s.mp3' % thisword
-            print(path)
-            if not os.path.exists(path):
-                #this word is not in the voice diretory
-                result_voice = False
-                try:
-                    html = gethtml(icba_url + thisword)
-                    if html is None:
-                        html = gethtml(icba_url + thisword)
-                    soup = BeautifulSoup(html, "html.parser")
-                    base_div = soup.find('div',attrs={"class": "base-speak"})
-                    mp3_i = base_div.find('i', attrs={"class": "new-speak-step"})
-                    cont =  mp3_i.attrs['ms-on-mouseover']
-                    mp3_url = re.findall(r'http.*mp3',cont)[0]
-                    result_voice = get_voice(thisword,mp3_url,path)
-                except:
-                    print("error in getting voice from iciba.com")
-                
-                if result_voice == False:
+
+    if total > local_voice_num:
+        #there are more words in database than in the voice diretory
+        vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
+        stmt = text("SELECT * FROM french")
+        result = conn.execute(stmt)
+        if result.rowcount > 0:
+            for row in result:
+                thisword = row['french']
+                path ='french/%s.mp3' % thisword
+                print(path)
+                if not os.path.exists(path):
+                    #this word is not in the voice diretory
+                    result_voice = False
                     try:
-                        mp3_url = 'https://fanyi.baidu.com/gettts?lan=en&text=%s&spd=3&source=web' % thisword
+                        html = gethtml(french_def_url + urllib.parse.quote(thisword))
+                        if html is None:
+                            html = gethtml(french_def_url + urllib.parse.quote(thisword))
+                        soup = BeautifulSoup(html, "html.parser")
+                        a_base = soup.find('a',attrs={"class": "hwd_sound sound audio_play_button icon-volume-up ptr"})
+                        print(a_base)
+                        print(a_base.attrs['data-src-mp3'])
+                        mp3_url = a_base.attrs['data-src-mp3']
                         result_voice = get_voice(thisword,mp3_url,path)
-                    except:    
-                        print("error in getting voice from baidu.com")
-                        get_voice(thisword, mp3_url,path)
+                    
+                    except:
+                        print("error in getting voice from www.collinsdictionary.com")
+                    
+                    '''if result_voice == False:
+                        try:
+                            mp3_url = 'https://fanyi.baidu.com/gettts?lan=en&text=%s&spd=3&source=web' % thisword
+                            result_voice = get_voice(thisword,mp3_url,path)
+                        except:    
+                            print("error in getting voice from baidu.com")
+                            get_voice(thisword, mp3_url,path)
+                    '''
+
 
     
 engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.26:3306/mysql", max_overflow=5)
@@ -421,8 +423,8 @@ metadata = MetaData(engine)
 conn = engine.connect()
 voice_engine = pyttsx3.init()
 
-local_voice_num = check_voice()
-print('Info : number of local voices is %d. \n' % local_voice_num)
+local_voice_num = check_french_voice()
+print('Info : number of local French voices is %d. \n' % local_voice_num)
 
 
 voice_engine.say("Please enter your name.")
@@ -444,13 +446,13 @@ else:
     voice_engine.runAndWait()
     if role == 'student':
         dictate(this_student,today_totol,today_new)
-    elif role == 'parent':
+    '''elif role == 'parent':
         mystudents = get_relation(this_student)
         for onestudent in mystudents:
             print_wordstat(onestudent,8)
-    
+    '''
 
-update_vocie(local_voice_num)
+update_french_vocie(local_voice_num)
 
 conn.close()
 			
