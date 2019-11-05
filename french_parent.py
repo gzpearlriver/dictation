@@ -6,6 +6,8 @@ from datetime import date
 from sqlalchemy import *
 
 from urllib import request
+import urllib
+
 import re
 
 from bs4 import BeautifulSoup
@@ -164,114 +166,47 @@ def string_max(string,len_max):
         return string
 
 
-def dict(word):
-    webster_defintion_url = r'http://www.learnersdictionary.com/definition/'
-    webster_defintion_backup = r'https://www.merriam-webster.com/dictionary/'
-    webster_thesaurus_url = r'https://www.merriam-webster.com/thesaurus/'
-    wordsmyth_url = 'https://kids.wordsmyth.net/we/?ent='
-    bing_url = r'https://cn.bing.com/search?q=definition+'
-    wordsmyth = r'https://kids.wordsmyth.net/we/?ent='
+def french_dict(word):
+    collins_french_url = 'https://www.collinsdictionary.com/dictionary/french-english/'
     
     #default value is None
-    definition = None
-    part_of_speech = None
-    synonym = None
-    antonym = None
+    pos1,eng1,eng_sen1,fre_sen1,pos2,eng2,eng_sen2,fre_sen2,pos3,eng3,eng_sen3,fre_sen3 = None,None,None,None,None,None,None,None,None,None,None,None
     
     #get definition
-    html = gethtml(webster_defintion_url + word)
-    #find definition in http://www.learnersdictionary.com
+    html = gethtml(collins_french_url + urllib.parse.quote(word))
+
     
     if not html is None : 
         soup = BeautifulSoup(html, "html.parser")
-        #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
-        part_of_speech_span = soup.find('span',attrs={"class": "fl"}) #dc_sth
-        if not part_of_speech_span is None:
-            part_of_speech = part_of_speech_span.text.strip()
-            part_of_speech = string_max(part_of_speech, 10)
+        part_of_speech_span = soup.find('span',attrs={"class": "pos"}) 
         
-        div = soup.find('div',attrs={"class": "sblock_c"}) 
-        if not div is None:
-            definition_span = div.find('span',attrs={"class": "def_text"})
-            if definition_span is None:
-                #try antother tag
-                definition_span = div.find('span',attrs={"class": "un_text"})
-                
-            if not definition_span is None:
-                #[s.extract() for s in definition_span('span')]
-                #get rid of the example sentense quoted with span          
-                definition = definition_span.text.strip()
-                definition = string_max(definition, 200)
-        else:
-            div = soup.find('div',attrs={"class": "cxs"})
-            if not div is None:
-                #print(type(div.text))
-                definition = div.text.strip().replace('\n',' ')
-                definition = string_max(definition, 200)
-                part_of_speech = 'noun'
+        div1 = soup.find('div',attrs={"class": "cB cB-def dictionary biling"})
+        if not div1 is None:
+        
+            part_of_speech_span = div1.find('span',attrs={"class": "pos"}) 
+            if not part_of_speech_span is None:
+                pos1 = part_of_speech_span.text.strip()
+                pos1 = string_max(pos1, 30)  #fix it someday, extend to 20 character
+            
+            english_span = div1.find('span',attrs={"class": "quote"}) 
+            if not english_span is None:
+                eng1 = english_span.text.strip()
+                eng1 = string_max(eng1, 200)
 
-    '''    
-    #no defintion is found, so try bing.cn        
-    if definition is None or part_of_speech is None:
-        html = gethtml(bing_url + word)
-        if not html is None : 
-            soup = BeautifulSoup(html, "html.parser")
-            #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
-            part_of_speech_div = soup.find('div',attrs={"class": "dc_sth"})
-            print(part_of_speech_div)
-            if not part_of_speech_div is None:
-                part_of_speech = part_of_speech_div.text.strip()
-                part_of_speech = string_max(part_of_speech, 10)
-                
-            definition_div = soup.find('div',attrs={"class": "dc_mn"})
-            print(definition_div)
-            if not definition_div is None:
-                definition = definition_div.text.strip()
-                definition = string_max(definition, 200)'''
-                
-    if definition is None or part_of_speech is None:
-        html = gethtml(wordsmyth + word)
-        if not html is None : 
-            try:
-                soup = BeautifulSoup(html, "html.parser")
-                tr = soup.find('tr',attrs={"class": "postitle"})
-                td = tr.find('td',attrs={"class": "data"})
-                #print(td.a.contents[0])
-                if not td.a.contents[0] is None:
-                    part_of_speech = td.a.contents[0].strip()
-                    part_of_speech = string_max(part_of_speech, 10)
-    
-                tr = soup.find('tr',attrs={"class": "definition"})
-                td = tr.find('td',attrs={"class": "data"})
-                #print(td.contents[0])
-                if not td.contents[0] is None:
-                    definition = td.contents[0].strip()
-                    definition = string_max(definition, 200)
-            except:
-                 print(wordsmyth,"parse error")
+            part_of_speech_span = div1.find('span',attrs={"class": "pos"}) 
+            if not part_of_speech_span is None:
+                pos1 = part_of_speech_span.text.strip()
+                pos1 = string_max(pos1, 30)  #fix it someday, extend to 20 character
+            
+            english_span = div1.find('span',attrs={"class": "quote"}) 
+            if not english_span is None:
+                eng1 = english_span.text.strip()
+                eng1 = string_max(eng1, 200)
 
-    #get synonym and antonym
-    html=gethtml(webster_thesaurus_url + word)
-    if not html is None :
-        soup = BeautifulSoup(html, "html.parser")
-        #class="thes-list syn-list"
-        synonym_span = soup.find('span',attrs={"class": "thes-list syn-list"})
-        if not synonym_span is None:
-            synonym_list = synonym_span.find('div',attrs={"class": "thes-list-content"})
-            synonym = synonym_list.text.strip()
-            synonym = string_max(synonym, 100)
         
-        antonym_span = soup.find('span',attrs={"class": "thes-list ant-list"})
-        if not antonym_span is None:
-            antonym_list = antonym_span.find('div',attrs={"class": "thes-list-content"})
-            antonym = antonym_list.text.strip()
-            antonym = string_max(antonym, 100)
-        
-    print(part_of_speech)
-    print(definition)
-    print(synonym)
-    print(antonym)
-    return(part_of_speech,definition,synonym,antonym)
+    print(word,part_of_speech,english)
+
+    return(pos1,eng1,eng_sen1,fre_sen1,pos2,eng2,eng_sen2,fre_sen2,pos3,eng3,eng_sen3,fre_sen3)
 
 
     
@@ -291,15 +226,28 @@ def add_new_word(new_word_list_filename):
         else:
             print("insert this word: %s !" % line)
             #for row in conn.execute(s):
-            '''
-            part_of_speech,definition,synonym,antonym = dict(line)
-            if (not definition is None) :
-                ins = vocabulary.insert().values(word = line,part_of_speech=part_of_speech,definition=definition,synonym=synonym,antonym=antonym)
+            pos1,eng1,eng_sen1,fre_sen1,pos2,eng2,eng_sen2,fre_sen2,pos3,eng3,eng_sen3,fre_sen3 = french_dict(line)
+            
+            if (not eng1 is None) :
+                ins = vocabulary.insert().values(word = line,
+                                                 part_of_speech1=pos1,
+                                                 engish1=eng1,
+                                                 french_sentence1=fre_sen1,
+                                                 english_sentence1=eng_sen1,
+                                                 part_of_speech2=pos2,
+                                                 engish2=eng2,
+                                                 french_sentence2=fre_sen2,
+                                                 english_sentence2=eng_sen2,
+                                                 part_of_speech3=pos3,
+                                                 engish3=eng3,
+                                                 french_sentence3=fre_sen3,
+                                                 english_sentence3=eng_sen3)
+                                                 
                 print(ins)
                 result = conn.execute(ins)
             else:
                 print("Sorry. I can not find the definiton for  %s! I have to skip it....." % line)
-			'''
+			
             
 def check_word(thisword):
     vocabulary = Table('french', metadata, autoload=True, autoload_with=engine)
@@ -338,15 +286,15 @@ def update_vocabulary():
         for row in result:
             word = row['word']
             print("\nupdateing this word: %s !" % word)
-            part_of_speech,definition,synonym,antonym = dict(word)
+            part_of_speech,definition,synonym,antonym =french_dict(word)
             if (not definition is None) and (not part_of_speech is None):
                 upd = vocabulary.update().where(vocabulary.c.word == word).values(part_of_speech=part_of_speech,definition=definition,synonym=synonym,antonym=antonym)
                 #print(upd)
                 conn.execute(upd)            
 			
-def delete_word(thisword):
+def delete_french_word(thisword):
     vocabulary = Table('french', metadata, autoload=True, autoload_with=engine)
-    stmt=vocabulary.delete().where(vocabulary.c.word == thisword)
+    stmt=vocabulary.delete().where(vocabulary.c.french == thisword)
     print(stmt)
     conn.execute(stmt)
     wordlist = Table('french_wordlist', metadata, autoload=True, autoload_with=engine)
@@ -469,12 +417,12 @@ while True:
     
     elif choiced == 2:
         thisword = input("Please enter the word to check: ")
-        delete_word(thisword)    
+        delete_french_word(thisword)    
     
     elif choiced == 3:
         thisword = input("Please enter the word to check: ")
         check_word(thisword)    
-        part_of_speech,definition,synonym,antonym = dict(thisword)
+        part_of_speech,definition,synonym,antonym =french_dict(thisword)
         print("="*60)
         print(part_of_speech,definition,synonym,antonym)
     

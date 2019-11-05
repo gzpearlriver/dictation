@@ -210,8 +210,8 @@ def dictate_oneword(word):
     stmt = stmt.bindparams(x=word)
     #print(str(stmt))
     vocabulary_row = conn.execute(stmt).fetchone()
-    definition = vocabulary_row['english']
-    part_of_speech = vocabulary_row['part_of_speech']
+    definition = vocabulary_row['english1']
+    part_of_speech = vocabulary_row['part_of_speech1']
     
     #play announcment
 
