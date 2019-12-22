@@ -193,18 +193,18 @@ def french_dict(word):
                 eng1 = english_span.text.strip()
                 eng1 = string_max(eng1, 200)
 
-            part_of_speech_span = div1.find('span',attrs={"class": "pos"}) 
-            if not part_of_speech_span is None:
-                pos1 = part_of_speech_span.text.strip()
-                pos1 = string_max(pos1, 30)  #fix it someday, extend to 20 character
+            example_div = div1.find('div',attrs={"class": "cit type-example"}) 
+            if not example_div is None:
+                sentence_span = example_div.find_all('span',attrs={"class": "quote"}) 
+                if not sentence_span is None:
+                    fre_sen1 = sentence_span[0].text.strip()
+                    fre_sen1 = string_max(fre_sen1, 300)  
             
-            english_span = div1.find('span',attrs={"class": "quote"}) 
-            if not english_span is None:
-                eng1 = english_span.text.strip()
-                eng1 = string_max(eng1, 200)
+                    eng_sen1 = sentence_span[1].text.strip()
+                    eng_sen1 = string_max(eng_sen1, 300)  
 
         
-    print(word,part_of_speech,english)
+    print(pos1,eng1,fre_sen1,eng_sen1)
 
     return(pos1,eng1,eng_sen1,fre_sen1,pos2,eng2,eng_sen2,fre_sen2,pos3,eng3,eng_sen3,fre_sen3)
 
@@ -229,21 +229,21 @@ def add_new_word(new_word_list_filename):
             pos1,eng1,eng_sen1,fre_sen1,pos2,eng2,eng_sen2,fre_sen2,pos3,eng3,eng_sen3,fre_sen3 = french_dict(line)
             
             if (not eng1 is None) :
-                ins = vocabulary.insert().values(word = line,
+                ins = vocabulary.insert().values(french= line,
                                                  part_of_speech1=pos1,
-                                                 engish1=eng1,
+                                                 english1=eng1,
                                                  french_sentence1=fre_sen1,
                                                  english_sentence1=eng_sen1,
                                                  part_of_speech2=pos2,
-                                                 engish2=eng2,
+                                                 english2=eng2,
                                                  french_sentence2=fre_sen2,
                                                  english_sentence2=eng_sen2,
                                                  part_of_speech3=pos3,
-                                                 engish3=eng3,
+                                                 english3=eng3,
                                                  french_sentence3=fre_sen3,
                                                  english_sentence3=eng_sen3)
                                                  
-                print(ins)
+                #print(ins)
                 result = conn.execute(ins)
             else:
                 print("Sorry. I can not find the definiton for  %s! I have to skip it....." % line)
@@ -369,7 +369,7 @@ def init_user():
     parentlist = ['Jackie','Frank']
     add_relation(parentlist,studentlist)
 	
-engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.26:3306/mysql", max_overflow=5)
+engine = create_engine("mysql+pymysql://root:Frank123@66.98.125.27:3306/dictation", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
 

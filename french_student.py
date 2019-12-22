@@ -418,7 +418,7 @@ def update_french_vocie(local_voice_num):
 
 
     
-engine = create_engine("mysql+pymysql://root:Frank123@104.225.154.26:3306/mysql", max_overflow=5)
+engine = create_engine("mysql+pymysql://root:Frank123@66.98.125.27:3306/dictation", max_overflow=5)
 metadata = MetaData(engine)
 conn = engine.connect()
 voice_engine = pyttsx3.init()
