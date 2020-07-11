@@ -129,8 +129,10 @@ def insert_word(this_student,new_word_list_filename,new_or_old,initial):
             #print(result)
         
             if result.rowcount > 0:
+                #the word is already in database, so just change the initial and don't change new!
                 print("%s already in the database......update the initial only" % line)
-                upd = wordlist.update().where(and_(wordlist.c.word == line , wordlist.c.student == this_student)).values(initial=initial, new=itisnew, lasttime=today)
+                upd = wordlist.update().where(and_(wordlist.c.word == line , wordlist.c.student == this_student)).values(initial=initial, lasttime=today)
+                #delete this statement "new=True,"
                 #print(upd)
                 conn.execute(upd)
             else:
@@ -150,7 +152,7 @@ def gethtml(url):
     try:
         req = request.Request(url,headers=headers)
         #req = request.Request(url,headers=headers,proxies=proxies)
-        page = request.urlopen(req).read()
+        page = request.urlopen(req,timeout=20).read()
         page = page.decode('utf-8')
     except:
         page = None
@@ -184,14 +186,27 @@ def dict(word):
     
     if not html is None : 
         soup = BeautifulSoup(html, "html.parser")
+        
+        
         #<div role="heading" aria-level="3" class="dc_sth">NOUN</div>
+        #find part of speech of this word
         part_of_speech_span = soup.find('span',attrs={"class": "fl"}) #dc_sth
         if not part_of_speech_span is None:
             part_of_speech = part_of_speech_span.text.strip()
             part_of_speech = string_max(part_of_speech, 10)
         
+        #<span class="isyns"><a href="/definition/sticky" class="isyn_link">sticky</a></span>
+        #find span isyns for definition 
+        span = soup.find('span',attrs={"class": "isyns"}) 
+        if not span is None:
+            definition = definition_span.text.strip()
+            definition = string_max(definition, 200)
+
+        #<div class="sblocks">
+        #find div sblocks for definition 
         div = soup.find('div',attrs={"class": "sblock_c"}) 
         if not div is None:
+            # <span class="def_text">
             definition_span = div.find('span',attrs={"class": "def_text"})
             if definition_span is None:
                 #try antother tag

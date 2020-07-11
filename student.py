@@ -373,7 +373,7 @@ def check_voice():
 def update_vocie(local_voice_num):
     print("\nupdating voice files.....")
     #get the number of words in vocabulary
-    icba_url = 'http://www.iciba.com/'
+    icba_url = r'http://www.iciba.com/word?w='
     
     vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
     stmt = text("SELECT count(*) as word_count FROM vocabulary")
