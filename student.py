@@ -112,8 +112,8 @@ def dictate(student,today_totol,today_new):
                     #其他情况
                     wrong = 1
                     correct = 0
-                value = 0 - wrong
-                #降低value值，提高练习优先度
+                value = 0 - wrong * 3
+                #*3加大惩罚程度，降低value值，提高练习优先度
                 
             print (word,"   ----    initial:",initial,"value:",value,"correct:",correct,"wrong:",wrong)  
             s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,value=value,wrong=wrong,correct=correct,practice=practice+1,new=False)
@@ -169,11 +169,12 @@ def dictate(student,today_totol,today_new):
                     #其他情况
                     wrong = 1
                     correct = 0
-                value = 0 - wrong
+                    
+                value = 0 - wrong * 3
                 #降低value值，提高练习优先度，但保持initial的高优先度
                 
             initial = min(0, initial+2)
-            #every time you practice, initial will get closer to 0 from negtive . it means it has less chance to be pick up.
+            #every time you practice, initial will get closer to 0 from negative . it means it has less chance to be pick up.
             
             print (word,"   ----    initial:",initial,"value:",value,"correct:",correct,"wrong:",wrong)  
             s = wordlist.update().where(and_(wordlist.c.student == student, wordlist.c.word == word)).values(lasttime=today,initial=initial,value=value,wrong=wrong,correct=correct,practice=practice+1)
