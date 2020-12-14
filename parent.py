@@ -199,7 +199,7 @@ def dict(word):
         #find span isyns for definition 
         span = soup.find('span',attrs={"class": "isyns"}) 
         if not span is None:
-            definition = definition_span.text.strip()
+            definition = span.text.strip()
             definition = string_max(definition, 200)
 
         #<div class="sblocks">
