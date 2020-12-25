@@ -350,16 +350,18 @@ def gethtml(url):
 
 def get_voice(word,mp3url,path):
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
-    
+    print(word,mp3url,path)
     try:
         req = request.Request(mp3url, headers=headers)
         response = request.urlopen(req)
+        print("http errer code:,",response.status, response.reason)
         content = response.read()
         with open(path,'wb') as f:
             f.write(content)
             f.close()
             return True
     except:
+        #print("http errer code:,",response.status, response.reason)
         return False
     
 def check_voice():
@@ -404,6 +406,7 @@ def update_vocie(local_voice_num):
                     mp3_i = base_div.find('i', attrs={"class": "new-speak-step"})
                     cont =  mp3_i.attrs['ms-on-mouseover']
                     mp3_url = re.findall(r'http.*mp3',cont)[0]
+                    print("iciaba.com voice url:",mp3_url)
                     result_voice = get_voice(thisword,mp3_url,path)
                 except:
                     print("error in getting voice from iciba.com")
@@ -411,6 +414,7 @@ def update_vocie(local_voice_num):
                 if result_voice == False:
                     try:
                         mp3_url = 'https://fanyi.baidu.com/gettts?lan=en&text=%s&spd=3&source=web' % thisword
+                        print("fanyi.baidu.com voice url:",mp3_url)
                         result_voice = get_voice(thisword,mp3_url,path)
                     except:    
                         print("error in getting voice from baidu.com")
