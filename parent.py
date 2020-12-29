@@ -53,12 +53,10 @@ def insert_parent(user,passwd):
     ins = student.insert().values(name=user, role='parent',password=passwd,total_per_day=0,new_per_day=0)
     result = conn.execute(ins)
 
-def add_relation(parentlist,studentlist):
-    relationship = Table('relationship', metadata, autoload=True, autoload_with=engine)
-    for parent in parentlist:
-        for student in studentlist: 	
-            ins = relationship.insert().values(parent=parent,student=student)
-            result = conn.execute(ins)
+def add_relation(parent,student):
+    relationship = Table('relationship', metadata, autoload=True, autoload_with=engine)	
+    ins = relationship.insert().values(parent=parent,student=student)
+    result = conn.execute(ins)
 	
 def update_student(user,passwd,total,new):
     student = Table('student', metadata, autoload=True, autoload_with=engine)
@@ -97,7 +95,22 @@ def list_student():
     print("="*60)
     print("\n")
 
+def list_relation():
+    #wordlist = Table('student', metadata, autoload=True, autoload_with=engine)
     
+    stmt = text("SELECT * FROM relationship order by parent")
+    result = conn.execute(stmt)
+    if result.rowcount > 0:
+        print("%-30s%-30s" %("student","parent"))
+        print("="*60)
+        for row in result:
+            student = row['student']
+            parent = row['parent']
+            print("%-30s%-30s" %(student,parent))
+    print("\nThat's all the relation.")
+    print("="*60)
+    print("\n")
+
 def insert_word(this_student,new_word_list_filename,new_or_old,initial):
     today = date.today()
     if new_or_old == 'new' or new_or_old =='New' :
@@ -358,10 +371,11 @@ def update_vocabulary():
                 conn.execute(upd)            
 			
 def delete_word(thisword):
-    vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
+    '''vocabulary = Table('vocabulary', metadata, autoload=True, autoload_with=engine)
     stmt=vocabulary.delete().where(vocabulary.c.word == thisword)
     print(stmt)
     conn.execute(stmt)
+    '''
     wordlist = Table('wordlist', metadata, autoload=True, autoload_with=engine)
     stmt=wordlist.delete().where(wordlist.c.word == thisword)
     print(stmt)
@@ -410,13 +424,15 @@ print("\nWelcome! This the program for parent. \n\n")
 while True:
     print("0) quit.")
     print("1) add new wordlist.")
-    print("2) delete word.")
+    print("2) delete word from student's list.")
     print("3) check word definition.")
     print("4) add new student.")
-    print("5) update all definiton in the database(don't do that).")
+    print("5) add new parent.")
     print("6) list student's wordlist.")
     print("7) list students.")
     print("8) update student's config.")
+    print("9) add relation between parents and student")
+    print("10) list relation between parents and student")
     choiced = input("Please enter your choice:")
 
     if not choiced.isdigit():
@@ -425,10 +441,12 @@ while True:
               
     choiced = int(choiced)
     if choiced == 0:
+        # 0) quit."
         print("see you .....")
         break
     
     elif choiced == 1:
+        # 1) add new wordlist.
         print("\n\nLet's extend vocabulary!\n")
         initial = input("Please enter initial value for the new worldlist(default is 0, high priorty with negative number):")
         new_word_list_filename = input("Please enter worldlist filename:")
@@ -447,10 +465,12 @@ while True:
             insert_word(student,new_word_list_filename,new_or_old='new',initial=initial)
     
     elif choiced == 2:
+        # 2) delete word from student's list.
         thisword = input("Please enter the word to check: ")
         delete_word(thisword)    
     
     elif choiced == 3:
+        # 3) check word definition
         thisword = input("Please enter the word to check: ")
         check_word(thisword)    
         part_of_speech,definition,synonym,antonym = dict(thisword)
@@ -458,14 +478,20 @@ while True:
         print(part_of_speech,definition,synonym,antonym)
     
     elif choiced == 4:
+        # 4) add new student
         student = input("Please enter the student name: ")
-        password = input("Please enter the password: ")
+        password = input("Please enter the password:(not nessesary) ")
         total = input("Please enter how many words to practice: (recommend 10) ")
-        new = input("Please enter how many new words to learn: (recommed 5)")
-        insert_user(user,passwd,total,new)
+        total = 10 if total == '' else int(total) 
+        new = input("Please enter how many new words to learn: (recommend 5)")
+        new = 5 if new == '' else int(new)
+        insert_student(student,password,total,new)
 	
     elif choiced == 5:
-        update_vocabulary()
+        # 5) add new parent
+        parent = input("Please enter the parent's name: ")
+        password = input("Please enter the password:(not nessesary) ")
+        insert_parent(parent,password)
 
     elif choiced == 6:
         student = input("Please enter the student name: ")
@@ -481,16 +507,13 @@ while True:
         new = input("Please enter how many new words to learn: (recommed 5)")
         update_student(student,'2018',total,new)
 
-'''
-#add parent
-user = 'Jackie'
-passwd = '2018'
-#update_user(user,passwd,total,new)
-insert_parent(user,passwd)
-'''
+    elif choiced == 9:
+        # 9)  add relation between parents and student
+        parent = input("Please enter the parent's name ")
+        student = input("Please enter the student's name ")
+        add_relation(parent, student)
 
-'''
-studentlist = ['Francis','Peter','Matthew']
-parentlist = ['Jackie','Frank']
-add_relation(parentlist,studentlist)
-'''
+    elif choiced == 10:
+        # 10) list relation between parents and student
+        list_relation()
+
